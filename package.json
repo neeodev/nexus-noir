@@ -1,0 +1,17 @@
+{
+  "name": "nexus-noir-web",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Plateforme de publication et de lecture des nouvelles Nexus Noir",
+  "scripts": {
+    "web:dev": "pnpm --filter web dev",
+    "web:build": "pnpm --filter web build",
+    "api:serve": "php apps/api/artisan serve",
+    "docker:up": "docker compose up -d",
+    "docker:down": "docker compose down"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10"
+  }
+}
