@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchStory } from "@/lib/api";
 import { StoryRenderer } from "@/components/story/StoryRenderer";
+import { ReactionBar } from "@/modules/reactions/components/ReactionBar";
 
 type Params = { slug: string };
 
@@ -66,6 +67,8 @@ export default async function StoryPage({
       </div>
 
       <StoryRenderer document={story.content} />
+
+      <ReactionBar slug={story.slug} />
     </article>
   );
 }
