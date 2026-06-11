@@ -17,4 +17,9 @@ Route::prefix('v1')->group(function () {
     // Stories (Archives) — lecture publique
     Route::get('/stories', [StoryController::class, 'index']);
     Route::get('/stories/{slug}', [StoryController::class, 'show']);
+
+    // Bureau Noir — accès réservé aux rôles disposant de la permission admin.access.
+    Route::middleware(['auth:sanctum', 'can:admin.access'])->prefix('admin')->group(function () {
+        Route::get('/ping', fn () => response()->json(['message' => 'Bienvenue au Bureau Noir.']));
+    });
 });

@@ -3,6 +3,8 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Enums\Permission;
+use App\Enums\UserRole;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -11,7 +13,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['name', 'email', 'password'])]
+#[Fillable(['name', 'email', 'password', 'role'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -28,6 +30,28 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'role' => UserRole::class,
         ];
+    }
+
+    public function hasRole(UserRole $role): bool
+    {
+        return $this->role === $role;
+    }
+
+    /** Vrai si l'utilisateur a au moins le niveau hiérarchique du rôle donné. */
+    public function hasAtLeastRole(UserRole $role): bool
+    {
+        return $this->role->level() >= $role->level();
+    }
+
+    public function hasPermission(Permission $permission): bool
+    {
+        // Le super admin a tout (cohérent avec Gate::before).
+        if ($this->role === UserRole::SuperAdmin) {
+            return true;
+        }
+
+        return $this->role->hasPermission($permission);
     }
 }

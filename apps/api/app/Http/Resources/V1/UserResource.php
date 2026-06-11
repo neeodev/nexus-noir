@@ -17,6 +17,13 @@ class UserResource extends JsonResource
             'id' => $this->id,
             'name' => $this->name,
             'email' => $this->email,
+            'role' => $this->role->value,
+            'roleLabel' => $this->role->label(),
+            // Liste des abilities accordées : le front peut afficher/masquer en conséquence.
+            'permissions' => array_map(
+                fn ($permission) => $permission->value,
+                $this->role->permissions(),
+            ),
             'emailVerifiedAt' => $this->email_verified_at?->toIso8601String(),
             'createdAt' => $this->created_at?->toIso8601String(),
         ];

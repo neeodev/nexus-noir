@@ -3,10 +3,12 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/modules/auth/store";
+import { useHasPermission } from "@/modules/auth/hooks";
 
 export function SiteHeader() {
   const router = useRouter();
   const { user, status, logout } = useAuthStore();
+  const canAccessAdmin = useHasPermission("admin.access");
 
   async function handleLogout() {
     await logout();
@@ -29,7 +31,14 @@ export function SiteHeader() {
             <span className="text-zinc-700">…</span>
           ) : user ? (
             <>
-              <span className="text-zinc-400">{user.name}</span>
+              {canAccessAdmin && (
+                <Link href="/admin" className="text-red-400 hover:text-red-300">
+                  Bureau Noir
+                </Link>
+              )}
+              <span className="text-zinc-400" title={user.roleLabel}>
+                {user.name}
+              </span>
               <button
                 onClick={handleLogout}
                 className="text-zinc-500 hover:text-red-500"
