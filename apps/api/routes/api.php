@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ReactionController;
 use App\Http\Controllers\Api\V1\StoryController;
 use Illuminate\Support\Facades\Route;
@@ -23,6 +24,15 @@ Route::prefix('v1')->group(function () {
     Route::get('/stories/{slug}/reactions', [ReactionController::class, 'index']);
     Route::post('/stories/{slug}/reactions', [ReactionController::class, 'store'])
         ->middleware('auth:sanctum');
+
+    // Commentaires (Murmures) — lecture publique, écriture/modération aux connectés
+    Route::get('/stories/{slug}/comments', [CommentController::class, 'index']);
+    Route::middleware('auth:sanctum')->group(function () {
+        Route::post('/stories/{slug}/comments', [CommentController::class, 'store'])
+            ->middleware('can:comments.create');
+        Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
+        Route::patch('/comments/{comment}/moderate', [CommentController::class, 'moderate']);
+    });
 
     // Bureau Noir — accès réservé aux rôles disposant de la permission admin.access.
     Route::middleware(['auth:sanctum', 'can:admin.access'])->prefix('admin')->group(function () {

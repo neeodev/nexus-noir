@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { fetchStory } from "@/lib/api";
 import { StoryRenderer } from "@/components/story/StoryRenderer";
 import { ReactionBar } from "@/modules/reactions/components/ReactionBar";
+import { CommentSection } from "@/modules/comments/components/CommentSection";
 
 type Params = { slug: string };
 
@@ -69,6 +70,8 @@ export default async function StoryPage({
       <StoryRenderer document={story.content} />
 
       <ReactionBar slug={story.slug} />
+
+      <CommentSection slug={story.slug} />
     </article>
   );
 }
