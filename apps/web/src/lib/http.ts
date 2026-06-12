@@ -41,6 +41,29 @@ export async function apiGet<T>(path: string): Promise<T> {
   return data as T;
 }
 
+/** Upload multipart (FormData) avec CSRF + cookies de session. */
+export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
+  await ensureCsrf();
+  const token = readCookie("XSRF-TOKEN");
+
+  const res = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    credentials: "include",
+    // Pas de Content-Type : le navigateur fixe la frontière multipart lui-même.
+    headers: {
+      Accept: "application/json",
+      ...(token ? { "X-XSRF-TOKEN": token } : {}),
+    },
+    body: form,
+  });
+
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    throw new ApiError(res.status, data?.message ?? `Erreur ${res.status}`, data?.errors ?? {});
+  }
+  return data as T;
+}
+
 type Method = "POST" | "PATCH" | "PUT" | "DELETE";
 
 export async function apiSend<T>(path: string, method: Method, body?: unknown): Promise<T> {

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\AdminStoryController;
+use App\Http\Controllers\Api\V1\Admin\MediaController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ReactionController;
@@ -47,5 +48,8 @@ Route::prefix('v1')->group(function () {
         Route::delete('/stories/{story:id}', [AdminStoryController::class, 'destroy'])->middleware('can:stories.delete');
         Route::post('/stories/{story:id}/publish', [AdminStoryController::class, 'publish'])->middleware('can:stories.publish');
         Route::post('/stories/{story:id}/unpublish', [AdminStoryController::class, 'unpublish'])->middleware('can:stories.publish');
+
+        // Preuves — upload d'images.
+        Route::post('/media', [MediaController::class, 'store'])->middleware('can:stories.create');
     });
 });

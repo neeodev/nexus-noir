@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import {
   useEditor,
   useEditorState,
@@ -8,6 +9,7 @@ import {
   type Content,
 } from "@tiptap/react";
 import { editorExtensions, emptyDoc } from "../extensions";
+import { mediaApi } from "../media";
 import type { StoryDocument } from "@/lib/api";
 
 /**
@@ -70,6 +72,20 @@ function Toolbar({ editor }: { editor: Editor }) {
     editor.chain().focus().setDialogue().setDialogueSpeaker(speaker.trim()).run();
   }
 
+  const fileInput = useRef<HTMLInputElement>(null);
+
+  async function handleImageFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ""; // permet de re-sélectionner le même fichier
+    if (!file) return;
+    try {
+      const media = await mediaApi.upload(file);
+      editor.chain().focus().setImage({ src: media.url, alt: media.alt ?? undefined }).run();
+    } catch {
+      window.alert("Échec de l'upload de l'image.");
+    }
+  }
+
   const Btn = ({
     active,
     onClick,
@@ -114,6 +130,15 @@ function Toolbar({ editor }: { editor: Editor }) {
       <Btn title="Bloc lore" label="Lore" active={s.lore} onClick={() => editor.chain().focus().toggleLore().run()} />
       <Btn title="Bloc transmission" label="Transm." active={s.transmission} onClick={() => editor.chain().focus().toggleTransmission().run()} />
       <Btn title="Violence (mise en avant)" label="⚠ Violence" active={s.violence} onClick={() => editor.chain().focus().toggleViolence().run()} />
+      <span className="mx-1 h-5 w-px bg-zinc-800" />
+      <Btn title="Insérer une image" label="🖼" onClick={() => fileInput.current?.click()} />
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageFile}
+      />
     </div>
   );
 }

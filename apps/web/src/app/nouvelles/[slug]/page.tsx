@@ -55,6 +55,11 @@ export default async function StoryPage({
         ← Retour aux archives
       </Link>
 
+      {story.coverImage && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={story.coverImage} alt="" className="mb-8 w-full rounded-lg" />
+      )}
+
       <div className="mb-8 flex flex-wrap items-center gap-x-3 text-xs text-zinc-600">
         <span>{story.readingTime} min de lecture</span>
         <span>·</span>

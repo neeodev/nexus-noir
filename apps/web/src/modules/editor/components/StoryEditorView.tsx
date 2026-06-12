@@ -8,6 +8,7 @@ import { ApiError } from "@/lib/http";
 import { StoryContent } from "../render";
 import { emptyDoc } from "../extensions";
 import { adminStoriesApi, type AdminStory, type StoryInput } from "../api";
+import { mediaApi } from "../media";
 import { StoryEditor } from "./StoryEditor";
 
 const STATUS_OPTIONS = [
@@ -43,6 +44,7 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
   const [status, setStatus] = useState("draft");
   const [tags, setTags] = useState("");
   const [warnings, setWarnings] = useState("");
+  const [coverImage, setCoverImage] = useState<string | null>(null);
   const [content, setContent] = useState<StoryDocument>(emptyDoc);
   // Contenu initial figé pour l'éditeur (monté une seule fois).
   const [initialContent, setInitialContent] = useState<StoryDocument | null>(null);
@@ -70,6 +72,7 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
         setStatus(s.status);
         setTags(s.tags.join(", "));
         setWarnings(s.contentWarnings.join(", "));
+        setCoverImage(s.coverImage);
         setContent(s.content);
         setInitialContent(s.content);
         setLoading(false);
@@ -89,12 +92,13 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
     (): StoryInput => ({
       title: title.trim() || "Sans titre",
       summaryShort: summaryShort.trim() || null,
+      coverImage,
       visibility,
       content,
       tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
       contentWarnings: warnings.split(",").map((t) => t.trim()).filter(Boolean),
     }),
-    [title, summaryShort, visibility, content, tags, warnings],
+    [title, summaryShort, coverImage, visibility, content, tags, warnings],
   );
 
   const save = useCallback(async () => {
@@ -239,6 +243,14 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
           <div className="space-y-4 rounded-md border border-zinc-900 bg-zinc-950/40 p-4">
             <p className="text-xs uppercase tracking-widest text-zinc-600">Paramètres</p>
 
+            <CoverField
+              coverImage={coverImage}
+              onChange={(url) => {
+                setCoverImage(url);
+                markDirty();
+              }}
+            />
+
             <Field label="Résumé court">
               <textarea
                 value={summaryShort}
@@ -319,6 +331,10 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
         <div className="lg:sticky lg:top-6 lg:self-start">
           <p className="mb-3 text-xs uppercase tracking-widest text-zinc-600">Aperçu</p>
           <div className="rounded-md border border-zinc-900 bg-zinc-950/40 p-5">
+            {coverImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={coverImage} alt="" className="mb-6 w-full rounded-md" />
+            )}
             <h1 className="mb-6 text-2xl font-semibold tracking-tight text-zinc-100">
               {title || "Titre de la nouvelle"}
             </h1>
@@ -339,5 +355,62 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="mb-1.5 block text-xs uppercase tracking-widest text-zinc-500">{label}</span>
       {children}
     </label>
+  );
+}
+
+function CoverField({
+  coverImage,
+  onChange,
+}: {
+  coverImage: string | null;
+  onChange: (url: string | null) => void;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const ref = useRef<HTMLInputElement>(null);
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try {
+      const media = await mediaApi.upload(file);
+      onChange(media.url);
+    } catch {
+      window.alert("Échec de l'upload de la couverture.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div>
+      <span className="mb-1.5 block text-xs uppercase tracking-widest text-zinc-500">
+        Image de couverture
+      </span>
+      {coverImage ? (
+        <div className="space-y-2">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={coverImage} alt="" className="w-full rounded-md border border-zinc-800" />
+          <button
+            type="button"
+            onClick={() => onChange(null)}
+            className="text-xs uppercase tracking-widest text-zinc-500 hover:text-red-400"
+          >
+            Retirer
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => ref.current?.click()}
+          disabled={uploading}
+          className="rounded-md border border-zinc-800 px-3 py-2 text-sm text-zinc-300 hover:border-zinc-600 disabled:opacity-50"
+        >
+          {uploading ? "Upload…" : "Téléverser une couverture"}
+        </button>
+      )}
+      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+    </div>
   );
 }

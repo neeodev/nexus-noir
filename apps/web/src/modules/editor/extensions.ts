@@ -1,4 +1,5 @@
 import StarterKit from "@tiptap/starter-kit";
+import Image from "@tiptap/extension-image";
 import type { Extensions } from "@tiptap/react";
 import type { StoryDocument } from "@/lib/api";
 import { Dialogue, Lore, Transmission, Violence } from "./customNodes";
@@ -14,6 +15,7 @@ export const editorExtensions: Extensions = [
   StarterKit.configure({
     heading: { levels: [2, 3] },
   }),
+  Image.configure({ inline: false, HTMLAttributes: { class: "nn-image" } }),
   Dialogue,
   Lore,
   Transmission,
