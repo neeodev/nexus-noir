@@ -3,16 +3,17 @@ import { Node, mergeAttributes } from "@tiptap/core";
 /**
  * Blocs propres à Nexus Noir.
  *
- * Ce sont des nœuds Tiptap PURS (schéma + parse/renderHTML), sans NodeView
- * React : le même jeu d'extensions sert au rendu serveur (generateHTML) comme
- * à l'éditeur. Le style vient du CSS (.nn-prose [data-nn=...]).
+ * Nœuds Tiptap PURS (schéma + parse/renderHTML), sans NodeView React :
+ * fonctionne à l'identique dans l'éditeur et dans le rendu serveur (generateHTML).
+ * Le style vient du CSS (.nn-prose [data-nn=...]).
  */
 
 declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     nexusBlocks: {
       setDialogue: () => ReturnType;
-      setDialogueSpeaker: (speaker: string) => ReturnType;
+      /** Définit le locuteur et sa couleur (index 0-7 dans SPEAKER_COLORS). */
+      setDialogueSpeaker: (speaker: string, colorIdx: number) => ReturnType;
       toggleLore: () => ReturnType;
       toggleTransmission: () => ReturnType;
       toggleViolence: () => ReturnType;
@@ -21,9 +22,8 @@ declare module "@tiptap/core" {
 }
 
 /**
- * Palette de 8 couleurs pour les locuteurs de dialogue.
- * La couleur est dérivée du nom via un hash → même nom = même couleur partout.
- * Index 0 = rouge (couleur principale Nexus Noir), autres = couleurs distinctes.
+ * Palette de 8 couleurs pour les locuteurs.
+ * Choisie par l'utilisateur dans la SpeakerModal (pas calculée automatiquement).
  */
 export const SPEAKER_COLORS = [
   "#f87171", // 0 rouge
@@ -36,16 +36,7 @@ export const SPEAKER_COLORS = [
   "#a3e635", // 7 lime
 ];
 
-function speakerColorIndex(name: string): number {
-  if (!name) return 0;
-  let h = 0;
-  for (let i = 0; i < name.length; i++) {
-    h = (h * 31 + name.charCodeAt(i)) | 0;
-  }
-  return Math.abs(h) % SPEAKER_COLORS.length;
-}
-
-/** Réplique de dialogue, avec un locuteur optionnel (couleur dérivée du nom). */
+/** Réplique de dialogue avec locuteur optionnel et couleur explicite. */
 export const Dialogue = Node.create({
   name: "dialogue",
   group: "block",
@@ -56,9 +47,20 @@ export const Dialogue = Node.create({
     return {
       speaker: {
         default: null,
-        parseHTML: (el) => el.getAttribute("data-speaker"),
+        parseHTML: (el) => el.getAttribute("data-speaker") ?? null,
         renderHTML: (attrs) =>
           attrs.speaker ? { "data-speaker": attrs.speaker } : {},
+      },
+      speakerColor: {
+        default: 0,
+        parseHTML: (el) => {
+          const v = el.getAttribute("data-speaker-color");
+          return v !== null ? parseInt(v, 10) : 0;
+        },
+        renderHTML: (attrs) =>
+          attrs.speaker
+            ? { "data-speaker-color": String(attrs.speakerColor ?? 0) }
+            : {},
       },
     };
   },
@@ -68,16 +70,7 @@ export const Dialogue = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    const speaker: string = HTMLAttributes.speaker ?? "";
-    const colorIdx = speakerColorIndex(speaker);
-    return [
-      "p",
-      mergeAttributes(HTMLAttributes, {
-        "data-nn": "dialogue",
-        ...(speaker ? { "data-speaker-color": String(colorIdx) } : {}),
-      }),
-      0,
-    ];
+    return ["p", mergeAttributes(HTMLAttributes, { "data-nn": "dialogue" }), 0];
   },
 
   addCommands() {
@@ -87,9 +80,12 @@ export const Dialogue = Node.create({
         ({ commands }) =>
           commands.setNode(this.name),
       setDialogueSpeaker:
-        (speaker: string) =>
+        (speaker: string, colorIdx: number) =>
         ({ commands }) =>
-          commands.updateAttributes(this.name, { speaker }),
+          commands.updateAttributes(this.name, {
+            speaker: speaker || null,
+            speakerColor: colorIdx,
+          }),
     };
   },
 });
@@ -126,7 +122,11 @@ export const Transmission = Node.create({
     return [{ tag: 'aside[data-nn="transmission"]' }];
   },
   renderHTML({ HTMLAttributes }) {
-    return ["aside", mergeAttributes(HTMLAttributes, { "data-nn": "transmission" }), 0];
+    return [
+      "aside",
+      mergeAttributes(HTMLAttributes, { "data-nn": "transmission" }),
+      0,
+    ];
   },
   addCommands() {
     return {
@@ -138,7 +138,7 @@ export const Transmission = Node.create({
   },
 });
 
-/** Bloc violence : passage violent mis en avant (avertissement fort). */
+/** Bloc violence : passage violent mis en avant. */
 export const Violence = Node.create({
   name: "violence",
   group: "block",
@@ -148,7 +148,11 @@ export const Violence = Node.create({
     return [{ tag: 'aside[data-nn="violence"]' }];
   },
   renderHTML({ HTMLAttributes }) {
-    return ["aside", mergeAttributes(HTMLAttributes, { "data-nn": "violence" }), 0];
+    return [
+      "aside",
+      mergeAttributes(HTMLAttributes, { "data-nn": "violence" }),
+      0,
+    ];
   },
   addCommands() {
     return {

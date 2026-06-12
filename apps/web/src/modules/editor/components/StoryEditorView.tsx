@@ -5,9 +5,15 @@ import Link from "next/link";
 import type { StoryDocument } from "@/lib/api";
 import { ApiError } from "@/lib/http";
 import { emptyDoc } from "../extensions";
-import { adminStoriesApi, type AdminStory, type StoryInput, type StoryVersion } from "../api";
+import {
+  adminStoriesApi,
+  type AdminStory,
+  type StoryInput,
+  type StoryVersion,
+} from "../api";
 import { mediaApi } from "../media";
 import { StoryEditor } from "./StoryEditor";
+import { ConfirmModal } from "@/components/Modal";
 
 const STATUS_OPTIONS = [
   { value: "draft", label: "Brouillon" },
@@ -28,12 +34,16 @@ const VISIBILITY_OPTIONS = [
 
 type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
 
+type ConfirmState = {
+  message: string;
+  resolve: (ok: boolean) => void;
+} | null;
+
 export function StoryEditorView({ storyId }: { storyId?: number }) {
   const [loading, setLoading] = useState(Boolean(storyId));
   const [id, setId] = useState<number | undefined>(storyId);
   const [story, setStory] = useState<AdminStory | null>(null);
 
-  // Champs de la nouvelle
   const [title, setTitle] = useState("");
   const [summaryShort, setSummaryShort] = useState("");
   const [visibility, setVisibility] = useState("public");
@@ -42,8 +52,6 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
   const [warnings, setWarnings] = useState("");
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [content, setContent] = useState<StoryDocument>(emptyDoc);
-  // Contenu initial figé pour l'éditeur (monté une seule fois).
-  // En création (pas d'id), on part d'un document vide sans passer par un effet.
   const [initialContent, setInitialContent] = useState<StoryDocument | null>(
     storyId ? null : emptyDoc,
   );
@@ -51,14 +59,31 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [error, setError] = useState<string | null>(null);
   const idRef = useRef<number | undefined>(storyId);
-  const savingRef = useRef(false); // évite les sauvegardes concurrentes (doubles créations)
+  const savingRef = useRef(false);
 
-  // Historique des versions
-  const [editorKey, setEditorKey] = useState(0); // incrémenté pour remonter l'éditeur
+  const [editorKey, setEditorKey] = useState(0);
   const [showVersions, setShowVersions] = useState(false);
   const [versions, setVersions] = useState<StoryVersion[] | null>(null);
 
-  // Charge la nouvelle existante.
+  // Modale de confirmation (remplace window.confirm)
+  const [confirmState, setConfirmState] = useState<ConfirmState>(null);
+
+  const confirm = useCallback((message: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      setConfirmState({ message, resolve });
+    });
+  }, []);
+
+  const handleConfirmOk = useCallback(() => {
+    confirmState?.resolve(true);
+    setConfirmState(null);
+  }, [confirmState]);
+
+  const handleConfirmCancel = useCallback(() => {
+    confirmState?.resolve(false);
+    setConfirmState(null);
+  }, [confirmState]);
+
   useEffect(() => {
     if (!storyId) return;
     let active = true;
@@ -96,15 +121,21 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
       coverImage,
       visibility,
       content,
-      tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
-      contentWarnings: warnings.split(",").map((t) => t.trim()).filter(Boolean),
+      tags: tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
+      contentWarnings: warnings
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean),
     }),
     [title, summaryShort, coverImage, visibility, content, tags, warnings],
   );
 
   const save = useCallback(async () => {
-    if (!title.trim()) return; // on ne crée pas de nouvelle sans titre
-    if (savingRef.current) return; // une sauvegarde est déjà en vol
+    if (!title.trim()) return;
+    if (savingRef.current) return;
     savingRef.current = true;
     setSaveState("saving");
     setError(null);
@@ -120,27 +151,25 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
         setId(created.id);
         setStory(created);
         setStatus(created.status);
-        // Passe l'URL en mode édition sans recharger.
         window.history.replaceState(null, "", `/admin/nouvelles/${created.id}`);
       }
-      // Conserve "dirty" si une modification est survenue pendant la sauvegarde.
       setSaveState((s) => (s === "dirty" ? "dirty" : "saved"));
     } catch (err) {
       setSaveState("error");
-      setError(err instanceof ApiError ? err.message : "Échec de l'enregistrement.");
+      setError(
+        err instanceof ApiError ? err.message : "Échec de l'enregistrement.",
+      );
     } finally {
       savingRef.current = false;
     }
   }, [buildInput, title]);
 
-  // Autosave : 1,5 s après la dernière modification.
   useEffect(() => {
     if (saveState !== "dirty") return;
     const timer = setTimeout(save, 1500);
     return () => clearTimeout(timer);
   }, [saveState, save]);
 
-  // Marque "modifié" quand un champ change (après chargement initial).
   const markDirty = () => setSaveState("dirty");
 
   async function handlePublish() {
@@ -165,19 +194,27 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
     setShowVersions(next);
     if (next && idRef.current) {
       setVersions(null);
-      setVersions(await adminStoriesApi.versions(idRef.current).catch(() => []));
+      setVersions(
+        await adminStoriesApi.versions(idRef.current).catch(() => []),
+      );
     }
   }
 
   async function handleRestore(versionId: number) {
     if (!idRef.current) return;
-    if (!window.confirm("Restaurer cette version ? La version actuelle est conservée dans l'historique.")) return;
-    const restored = await adminStoriesApi.restoreVersion(idRef.current, versionId);
+    const ok = await confirm(
+      "Restaurer cette version ? La version actuelle est conservée dans l'historique.",
+    );
+    if (!ok) return;
+    const restored = await adminStoriesApi.restoreVersion(
+      idRef.current,
+      versionId,
+    );
     setStory(restored);
     setTitle(restored.title);
     setContent(restored.content);
     setInitialContent(restored.content);
-    setEditorKey((k) => k + 1); // remonte l'éditeur avec le contenu restauré
+    setEditorKey((k) => k + 1);
     setStatus(restored.status);
     setShowVersions(false);
     setSaveState("saved");
@@ -195,202 +232,243 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
   }[saveState];
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <Link href="/admin/nouvelles" className="text-xs uppercase tracking-widest text-zinc-500 hover:text-red-400">
-          ← Nouvelles
-        </Link>
-        <div className="flex items-center gap-3 text-xs">
-          <span className={saveState === "error" ? "text-red-400" : "text-zinc-500"}>{saveLabel}</span>
-          {id && (
-            <button
-              type="button"
-              onClick={toggleVersions}
-              className="rounded border border-zinc-700 px-3 py-1.5 uppercase tracking-widest text-zinc-300 hover:border-zinc-500"
-            >
-              Versions
-            </button>
-          )}
-          <button
-            type="button"
-            onClick={save}
-            className="rounded border border-zinc-700 px-3 py-1.5 uppercase tracking-widest text-zinc-300 hover:border-zinc-500"
-          >
-            Enregistrer
-          </button>
-          {isPublished ? (
-            <button
-              type="button"
-              onClick={handleUnpublish}
-              className="rounded border border-amber-800 px-3 py-1.5 uppercase tracking-widest text-amber-300 hover:bg-amber-950/40"
-            >
-              Dépublier
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handlePublish}
-              className="rounded bg-red-900 px-3 py-1.5 uppercase tracking-widest text-zinc-100 hover:bg-red-800"
-            >
-              Publier
-            </button>
-          )}
-          {isPublished && story && (
-            <Link
-              href={`/nouvelles/${story.slug}`}
-              target="_blank"
-              className="rounded border border-zinc-700 px-3 py-1.5 uppercase tracking-widest text-zinc-300 hover:border-zinc-500"
-            >
-              Voir
-            </Link>
-          )}
-        </div>
-      </div>
-
-      {error && <p className="mb-4 rounded border border-red-900/60 bg-red-950/30 px-3 py-2 text-sm text-red-300">{error}</p>}
-
-      {showVersions && (
-        <div className="mb-6 rounded-md border border-zinc-800 bg-zinc-950/60 p-4">
-          <p className="mb-3 text-xs uppercase tracking-widest text-zinc-600">Historique des versions</p>
-          {versions === null ? (
-            <p className="text-sm text-zinc-700">…</p>
-          ) : versions.length === 0 ? (
-            <p className="text-sm text-zinc-600">Aucune version enregistrée.</p>
-          ) : (
-            <ul className="divide-y divide-zinc-900">
-              {versions.map((v) => (
-                <li key={v.id} className="flex items-center justify-between gap-3 py-2 text-sm">
-                  <span className="text-zinc-400">
-                    {formatVersionDate(v.createdAt)}
-                    <span className="ml-2 text-zinc-600">v{v.version} · {v.wordCount} mots{v.author ? ` · ${v.author}` : ""}</span>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleRestore(v.id)}
-                    className="shrink-0 rounded border border-zinc-700 px-2.5 py-1 text-xs uppercase tracking-widest text-zinc-300 hover:border-red-700 hover:text-red-300"
-                  >
-                    Restaurer
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+    <>
+      {confirmState && (
+        <ConfirmModal
+          title="Confirmation"
+          message={confirmState.message}
+          danger
+          confirmLabel="Restaurer"
+          onConfirm={handleConfirmOk}
+          onCancel={handleConfirmCancel}
+        />
       )}
 
-      <input
-        type="text"
-        value={title}
-        onChange={(e) => {
-          setTitle(e.target.value);
-          markDirty();
-        }}
-        placeholder="Titre de la nouvelle"
-        className="mb-6 w-full bg-transparent text-2xl font-semibold tracking-tight text-zinc-100 outline-none placeholder:text-zinc-700"
-      />
-
-      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_19rem]">
-        {/* Éditeur (large) — déjà WYSIWYG, donc plus d'aperçu séparé. */}
-        <div className="min-w-0">
-          {initialContent !== null && (
-            <StoryEditor
-              key={editorKey}
-              initialContent={initialContent}
-              onChange={(doc) => {
-                setContent(doc);
-                markDirty();
-              }}
-            />
-          )}
+      <div>
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <Link
+            href="/admin/nouvelles"
+            className="text-xs uppercase tracking-widest text-zinc-500 hover:text-red-400"
+          >
+            ← Nouvelles
+          </Link>
+          <div className="flex items-center gap-3 text-xs">
+            <span
+              className={
+                saveState === "error" ? "text-red-400" : "text-zinc-500"
+              }
+            >
+              {saveLabel}
+            </span>
+            {id && (
+              <button
+                type="button"
+                onClick={toggleVersions}
+                className="rounded border border-zinc-700 px-3 py-1.5 uppercase tracking-widest text-zinc-300 hover:border-zinc-500"
+              >
+                Versions
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={save}
+              className="rounded border border-zinc-700 px-3 py-1.5 uppercase tracking-widest text-zinc-300 hover:border-zinc-500"
+            >
+              Enregistrer
+            </button>
+            {isPublished ? (
+              <button
+                type="button"
+                onClick={handleUnpublish}
+                className="rounded border border-amber-800 px-3 py-1.5 uppercase tracking-widest text-amber-300 hover:bg-amber-950/40"
+              >
+                Dépublier
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handlePublish}
+                className="rounded bg-red-900 px-3 py-1.5 uppercase tracking-widest text-zinc-100 hover:bg-red-800"
+              >
+                Publier
+              </button>
+            )}
+            {isPublished && story && (
+              <Link
+                href={`/nouvelles/${story.slug}`}
+                target="_blank"
+                className="rounded border border-zinc-700 px-3 py-1.5 uppercase tracking-widest text-zinc-300 hover:border-zinc-500"
+              >
+                Voir
+              </Link>
+            )}
+          </div>
         </div>
 
-        {/* Paramètres (barre latérale) */}
-        <aside className="space-y-4 self-start rounded-md border border-zinc-900 bg-zinc-950/40 p-4 lg:sticky lg:top-6">
-          <p className="text-xs uppercase tracking-widest text-zinc-600">Paramètres</p>
+        {error && (
+          <p className="mb-4 rounded border border-red-900/60 bg-red-950/30 px-3 py-2 text-sm text-red-300">
+            {error}
+          </p>
+        )}
 
-          <CoverField
-            coverImage={coverImage}
-            onChange={(url) => {
-              setCoverImage(url);
-              markDirty();
-            }}
-          />
-
-          <Field label="Résumé court">
-            <textarea
-              value={summaryShort}
-              onChange={(e) => {
-                setSummaryShort(e.target.value);
-                markDirty();
-              }}
-              rows={3}
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="Statut">
-            <select
-              value={status}
-              onChange={(e) => {
-                setStatus(e.target.value);
-                markDirty();
-              }}
-              className={inputClass}
-            >
-              {STATUS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Visibilité">
-            <select
-              value={visibility}
-              onChange={(e) => {
-                setVisibility(e.target.value);
-                markDirty();
-              }}
-              className={inputClass}
-            >
-              {VISIBILITY_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>{o.label}</option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Tags (virgules)">
-            <input
-              type="text"
-              value={tags}
-              onChange={(e) => {
-                setTags(e.target.value);
-                markDirty();
-              }}
-              className={inputClass}
-            />
-          </Field>
-
-          <Field label="Avertissements (virgules)">
-            <input
-              type="text"
-              value={warnings}
-              onChange={(e) => {
-                setWarnings(e.target.value);
-                markDirty();
-              }}
-              className={inputClass}
-            />
-          </Field>
-
-          {story && (
-            <p className="text-xs text-zinc-600">
-              {story.wordCount} mots · {story.readingTime} min · v{story.version}
-              {story.slug && <> · /{story.slug}</>}
+        {showVersions && (
+          <div className="mb-6 rounded-md border border-zinc-800 bg-zinc-950/60 p-4">
+            <p className="mb-3 text-xs uppercase tracking-widest text-zinc-600">
+              Historique des versions
             </p>
-          )}
-        </aside>
+            {versions === null ? (
+              <p className="text-sm text-zinc-700">…</p>
+            ) : versions.length === 0 ? (
+              <p className="text-sm text-zinc-600">
+                Aucune version enregistrée.
+              </p>
+            ) : (
+              <ul className="divide-y divide-zinc-900">
+                {versions.map((v) => (
+                  <li
+                    key={v.id}
+                    className="flex items-center justify-between gap-3 py-2 text-sm"
+                  >
+                    <span className="text-zinc-400">
+                      {formatVersionDate(v.createdAt)}
+                      <span className="ml-2 text-zinc-600">
+                        v{v.version} · {v.wordCount} mots
+                        {v.author ? ` · ${v.author}` : ""}
+                      </span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleRestore(v.id)}
+                      className="shrink-0 rounded border border-zinc-700 px-2.5 py-1 text-xs uppercase tracking-widest text-zinc-300 hover:border-red-700 hover:text-red-300"
+                    >
+                      Restaurer
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        )}
+
+        <input
+          type="text"
+          value={title}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            markDirty();
+          }}
+          placeholder="Titre de la nouvelle"
+          className="mb-6 w-full bg-transparent text-2xl font-semibold tracking-tight text-zinc-100 outline-none placeholder:text-zinc-700"
+        />
+
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_19rem]">
+          <div className="min-w-0">
+            {initialContent !== null && (
+              <StoryEditor
+                key={editorKey}
+                initialContent={initialContent}
+                onChange={(doc) => {
+                  setContent(doc);
+                  markDirty();
+                }}
+              />
+            )}
+          </div>
+
+          <aside className="space-y-4 self-start rounded-md border border-zinc-900 bg-zinc-950/40 p-4 lg:sticky lg:top-6">
+            <p className="text-xs uppercase tracking-widest text-zinc-600">
+              Paramètres
+            </p>
+
+            <CoverField
+              coverImage={coverImage}
+              onChange={(url) => {
+                setCoverImage(url);
+                markDirty();
+              }}
+            />
+
+            <Field label="Résumé court">
+              <textarea
+                value={summaryShort}
+                onChange={(e) => {
+                  setSummaryShort(e.target.value);
+                  markDirty();
+                }}
+                rows={3}
+                className={inputClass}
+              />
+            </Field>
+
+            <Field label="Statut">
+              <select
+                value={status}
+                onChange={(e) => {
+                  setStatus(e.target.value);
+                  markDirty();
+                }}
+                className={inputClass}
+              >
+                {STATUS_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Visibilité">
+              <select
+                value={visibility}
+                onChange={(e) => {
+                  setVisibility(e.target.value);
+                  markDirty();
+                }}
+                className={inputClass}
+              >
+                {VISIBILITY_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>
+                    {o.label}
+                  </option>
+                ))}
+              </select>
+            </Field>
+
+            <Field label="Tags (virgules)">
+              <input
+                type="text"
+                value={tags}
+                onChange={(e) => {
+                  setTags(e.target.value);
+                  markDirty();
+                }}
+                className={inputClass}
+              />
+            </Field>
+
+            <Field label="Avertissements (virgules)">
+              <input
+                type="text"
+                value={warnings}
+                onChange={(e) => {
+                  setWarnings(e.target.value);
+                  markDirty();
+                }}
+                className={inputClass}
+              />
+            </Field>
+
+            {story && (
+              <p className="text-xs text-zinc-600">
+                {story.wordCount} mots · {story.readingTime} min · v
+                {story.version}
+                {story.slug && <> · /{story.slug}</>}
+              </p>
+            )}
+          </aside>
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
@@ -411,10 +489,18 @@ function formatVersionDate(iso: string | null): string {
 const inputClass =
   "w-full rounded-md border border-zinc-800 bg-zinc-950 px-3 py-2 text-sm text-zinc-100 outline-none focus:border-red-900/70";
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <label className="block">
-      <span className="mb-1.5 block text-xs uppercase tracking-widest text-zinc-500">{label}</span>
+      <span className="mb-1.5 block text-xs uppercase tracking-widest text-zinc-500">
+        {label}
+      </span>
       {children}
     </label>
   );
@@ -428,18 +514,20 @@ function CoverField({
   onChange: (url: string | null) => void;
 }) {
   const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const ref = useRef<HTMLInputElement>(null);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
+    setUploadError(null);
     setUploading(true);
     try {
       const media = await mediaApi.upload(file);
       onChange(media.url);
     } catch {
-      window.alert("Échec de l'upload de la couverture.");
+      setUploadError("Échec de l'upload de la couverture.");
     } finally {
       setUploading(false);
     }
@@ -453,7 +541,11 @@ function CoverField({
       {coverImage ? (
         <div className="space-y-2">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={coverImage} alt="" className="w-full rounded-md border border-zinc-800" />
+          <img
+            src={coverImage}
+            alt=""
+            className="w-full rounded-md border border-zinc-800"
+          />
           <button
             type="button"
             onClick={() => onChange(null)}
@@ -472,7 +564,16 @@ function CoverField({
           {uploading ? "Upload…" : "Téléverser une couverture"}
         </button>
       )}
-      <input ref={ref} type="file" accept="image/*" className="hidden" onChange={handleFile} />
+      {uploadError && (
+        <p className="mt-1 text-xs text-red-400">{uploadError}</p>
+      )}
+      <input
+        ref={ref}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFile}
+      />
     </div>
   );
 }
