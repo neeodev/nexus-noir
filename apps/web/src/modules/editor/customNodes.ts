@@ -20,7 +20,32 @@ declare module "@tiptap/core" {
   }
 }
 
-/** Réplique de dialogue, avec un locuteur optionnel (affiché en CSS via data-speaker). */
+/**
+ * Palette de 8 couleurs pour les locuteurs de dialogue.
+ * La couleur est dérivée du nom via un hash → même nom = même couleur partout.
+ * Index 0 = rouge (couleur principale Nexus Noir), autres = couleurs distinctes.
+ */
+export const SPEAKER_COLORS = [
+  "#f87171", // 0 rouge
+  "#60a5fa", // 1 bleu
+  "#34d399", // 2 émeraude
+  "#fbbf24", // 3 ambre
+  "#a78bfa", // 4 violet
+  "#f472b6", // 5 rose
+  "#22d3ee", // 6 cyan
+  "#a3e635", // 7 lime
+];
+
+function speakerColorIndex(name: string): number {
+  if (!name) return 0;
+  let h = 0;
+  for (let i = 0; i < name.length; i++) {
+    h = (h * 31 + name.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h) % SPEAKER_COLORS.length;
+}
+
+/** Réplique de dialogue, avec un locuteur optionnel (couleur dérivée du nom). */
 export const Dialogue = Node.create({
   name: "dialogue",
   group: "block",
@@ -43,7 +68,16 @@ export const Dialogue = Node.create({
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ["p", mergeAttributes(HTMLAttributes, { "data-nn": "dialogue" }), 0];
+    const speaker: string = HTMLAttributes.speaker ?? "";
+    const colorIdx = speakerColorIndex(speaker);
+    return [
+      "p",
+      mergeAttributes(HTMLAttributes, {
+        "data-nn": "dialogue",
+        ...(speaker ? { "data-speaker-color": String(colorIdx) } : {}),
+      }),
+      0,
+    ];
   },
 
   addCommands() {

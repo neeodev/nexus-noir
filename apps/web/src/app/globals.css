@@ -19,25 +19,35 @@ body {
   font-family: var(--font-sans), system-ui, sans-serif;
 }
 
-/* Typographie de lecture d'une nouvelle (rendu public + aperçu éditeur). */
+/* ────────────────────────────────────────────────────────
+   Typographie de lecture (.nn-prose)
+   Utilisée sur les pages publiques et dans l'éditeur WYSIWYG.
+──────────────────────────────────────────────────────── */
 .nn-prose {
-  color: #d4d4d8;
-  line-height: 1.75;
+  color: #c4c4cc;
+  font-size: 1.0625rem;
+  line-height: 1.85;
 }
 .nn-prose > * + * {
-  margin-top: 1.25rem;
+  margin-top: 1.5rem;
+}
+.nn-prose p {
+  letter-spacing: 0.01em;
 }
 .nn-prose h2 {
   font-size: 1.5rem;
-  font-weight: 600;
+  font-weight: 700;
   color: #f4f4f5;
-  margin-top: 2.5rem;
+  margin-top: 3rem;
+  margin-bottom: -0.5rem;
+  letter-spacing: -0.01em;
 }
 .nn-prose h3 {
-  font-size: 1.25rem;
+  font-size: 1.175rem;
   font-weight: 600;
-  color: #f4f4f5;
-  margin-top: 2rem;
+  color: #e4e4e7;
+  margin-top: 2.25rem;
+  margin-bottom: -0.75rem;
 }
 .nn-prose strong {
   color: #fafafa;
@@ -45,16 +55,23 @@ body {
 }
 .nn-prose em {
   font-style: italic;
+  color: #d4d4d8;
+}
+.nn-prose s {
+  text-decoration: line-through;
+  color: #71717a;
 }
 .nn-prose blockquote {
-  border-left: 4px solid #3f3f46;
-  padding-left: 1.25rem;
+  border-left: 3px solid #52525b;
+  padding: 0.25rem 0 0.25rem 1.25rem;
   font-style: italic;
   color: #a1a1aa;
+  margin: 1.75rem 0;
 }
 .nn-prose ul,
 .nn-prose ol {
   padding-left: 1.5rem;
+  color: #c4c4cc;
 }
 .nn-prose ul {
   list-style: disc;
@@ -62,49 +79,74 @@ body {
 .nn-prose ol {
   list-style: decimal;
 }
+.nn-prose li + li {
+  margin-top: 0.4rem;
+}
+
+/* Séparateur de scène */
 .nn-prose hr {
   border: none;
   text-align: center;
-  margin: 2.5rem 0;
+  margin: 3rem 0;
 }
 .nn-prose hr::before {
   content: "· · ·";
-  color: #52525b;
-  letter-spacing: 0.5em;
-  font-size: 1.25rem;
+  color: #3f3f46;
+  letter-spacing: 0.6em;
+  font-size: 1.1rem;
 }
 
 .nn-prose img {
   max-width: 100%;
   height: auto;
-  border-radius: 0.375rem;
-  margin: 1.5rem 0;
+  border-radius: 0.5rem;
+  margin: 2rem 0;
+  border: 1px solid #27272a;
 }
 
-/* Blocs Nexus Noir (rendu identique éditeur + public) */
+/* ────────────────────────────────────────────────────────
+   Blocs Nexus Noir
+──────────────────────────────────────────────────────── */
+
+/* Dialogue */
 .nn-prose [data-nn="dialogue"] {
-  border-left: 2px solid rgba(127, 29, 29, 0.6);
-  padding-left: 1rem;
+  border-left: 2px solid rgba(127, 29, 29, 0.5);
+  padding: 0.1rem 0 0.1rem 1rem;
   font-style: italic;
   color: #d4d4d8;
+  position: relative;
 }
 .nn-prose [data-nn="dialogue"][data-speaker]::before {
-  content: attr(data-speaker) " — ";
+  content: attr(data-speaker);
+  display: block;
   font-style: normal;
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: rgba(239, 68, 68, 0.8);
-  margin-right: 0.25rem;
+  letter-spacing: 0.18em;
+  margin-bottom: 0.2rem;
+  /* couleur par défaut (rouge) — surchargée par data-speaker-color */
+  color: #f87171;
 }
+
+/* 8 couleurs de locuteurs — dérivées du hash du nom dans customNodes.ts */
+.nn-prose [data-nn="dialogue"][data-speaker-color="0"]::before { color: #f87171; }
+.nn-prose [data-nn="dialogue"][data-speaker-color="1"]::before { color: #60a5fa; }
+.nn-prose [data-nn="dialogue"][data-speaker-color="2"]::before { color: #34d399; }
+.nn-prose [data-nn="dialogue"][data-speaker-color="3"]::before { color: #fbbf24; }
+.nn-prose [data-nn="dialogue"][data-speaker-color="4"]::before { color: #a78bfa; }
+.nn-prose [data-nn="dialogue"][data-speaker-color="5"]::before { color: #f472b6; }
+.nn-prose [data-nn="dialogue"][data-speaker-color="6"]::before { color: #22d3ee; }
+.nn-prose [data-nn="dialogue"][data-speaker-color="7"]::before { color: #a3e635; }
+
+/* Blocs encadrés (lore, transmission, violence) */
 .nn-prose [data-nn="lore"],
 .nn-prose [data-nn="transmission"],
 .nn-prose [data-nn="violence"] {
-  margin: 2rem 0;
-  padding: 1rem 1.25rem;
+  margin: 2.25rem 0;
+  padding: 1rem 1.25rem 1rem 1.25rem;
   border-radius: 0.375rem;
   border: 1px solid;
-  font-size: 0.95rem;
+  font-size: 0.9375rem;
   position: relative;
 }
 .nn-prose [data-nn="lore"]::before,
@@ -113,42 +155,47 @@ body {
   display: block;
   font-size: 0.65rem;
   text-transform: uppercase;
-  letter-spacing: 0.2em;
-  margin-bottom: 0.5rem;
+  letter-spacing: 0.22em;
+  margin-bottom: 0.6rem;
+  font-family: var(--font-mono), monospace;
 }
 .nn-prose [data-nn="lore"] {
-  border-color: rgba(63, 63, 70, 0.8);
-  background: rgba(24, 24, 27, 0.5);
+  border-color: rgba(63, 63, 70, 0.9);
+  background: rgba(18, 18, 20, 0.6);
   color: #a1a1aa;
 }
 .nn-prose [data-nn="lore"]::before {
   content: "Archive · Lore";
-  color: #71717a;
+  color: #52525b;
 }
 .nn-prose [data-nn="transmission"] {
-  border-color: rgba(8, 145, 178, 0.4);
-  background: rgba(8, 51, 68, 0.25);
+  border-color: rgba(8, 145, 178, 0.35);
+  background: rgba(8, 51, 68, 0.2);
   color: #a5f3fc;
   font-family: var(--font-mono), monospace;
+  font-size: 0.88rem;
+  line-height: 1.65;
 }
 .nn-prose [data-nn="transmission"]::before {
   content: "▚ Transmission interceptée";
-  color: rgba(34, 211, 238, 0.8);
+  color: rgba(34, 211, 238, 0.7);
 }
 .nn-prose [data-nn="violence"] {
-  border-color: rgba(153, 27, 27, 0.7);
-  background: rgba(69, 10, 10, 0.35);
+  border-color: rgba(153, 27, 27, 0.6);
+  background: rgba(69, 10, 10, 0.3);
   color: #fecaca;
 }
 .nn-prose [data-nn="violence"]::before {
   content: "⚠ Violence";
-  color: rgba(248, 113, 113, 0.9);
+  color: rgba(248, 113, 113, 0.85);
 }
 
-/* Zone d'édition Tiptap */
+/* ────────────────────────────────────────────────────────
+   Éditeur Tiptap (placeholder + focus)
+──────────────────────────────────────────────────────── */
 .nn-editor p.is-editor-empty:first-child::before {
   content: "Écris ton histoire…";
-  color: #52525b;
+  color: #3f3f46;
   float: left;
   height: 0;
   pointer-events: none;

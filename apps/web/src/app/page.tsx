@@ -1,47 +1,81 @@
 import Link from "next/link";
-import { fetchStories } from "@/lib/api";
+import { fetchStories, type StoryListItem } from "@/lib/api";
 
 export default async function HomePage() {
   const stories = await fetchStories();
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-2 text-2xl font-semibold tracking-tight text-zinc-100">
-        Archives
-      </h1>
-      <p className="mb-10 text-sm text-zinc-500">
-        Chaque nouvelle est une archive retrouvée dans Nexus Noir.
-      </p>
+      {/* En-tête atmosphérique */}
+      <div className="mb-12 border-l-2 border-red-900/50 pl-5">
+        <h1 className="text-3xl font-bold tracking-tight text-zinc-100">
+          Archives
+        </h1>
+        <p className="mt-2 text-sm text-zinc-500">
+          Des nouvelles retrouvées dans une ville malade.
+        </p>
+      </div>
 
       {stories.length === 0 ? (
-        <p className="text-zinc-500">Aucune archive disponible pour le moment.</p>
+        <p className="text-sm text-zinc-600">Aucune archive disponible pour le moment.</p>
       ) : (
-        <ul className="space-y-6">
+        <ul className="space-y-px divide-y divide-zinc-900/60">
           {stories.map((story) => (
             <li key={story.slug}>
-              <Link
-                href={`/nouvelles/${story.slug}`}
-                className="group block rounded-lg border border-zinc-900 bg-zinc-950/40 p-5 transition-colors hover:border-red-900/60"
-              >
-                <h2 className="text-lg font-medium text-zinc-100 group-hover:text-red-400">
-                  {story.title}
-                </h2>
-                {story.summaryShort && (
-                  <p className="mt-2 text-sm text-zinc-400">{story.summaryShort}</p>
-                )}
-                <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-600">
-                  <span>{story.readingTime} min de lecture</span>
-                  {story.tags.map((tag) => (
-                    <span key={tag} className="text-zinc-500">
-                      #{tag}
-                    </span>
-                  ))}
-                </div>
-              </Link>
+              <StoryCard story={story} />
             </li>
           ))}
         </ul>
       )}
     </div>
+  );
+}
+
+function StoryCard({ story }: { story: StoryListItem }) {
+  return (
+    <Link
+      href={`/nouvelles/${story.slug}`}
+      className="group flex gap-5 py-7 transition-all"
+    >
+      {/* Image de couverture (si disponible) */}
+      {story.coverImage && (
+        <div className="hidden shrink-0 sm:block">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={story.coverImage}
+            alt=""
+            className="h-24 w-16 rounded object-cover opacity-70 transition-opacity group-hover:opacity-100"
+          />
+        </div>
+      )}
+
+      {/* Contenu */}
+      <div className="min-w-0 flex-1">
+        <h2 className="text-lg font-semibold leading-snug text-zinc-200 transition-colors group-hover:text-red-400">
+          {story.title}
+        </h2>
+        {story.summaryShort && (
+          <p className="mt-1.5 text-sm leading-relaxed text-zinc-500 line-clamp-2">
+            {story.summaryShort}
+          </p>
+        )}
+        <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-600">
+          <span>{story.readingTime} min</span>
+          {story.tags.length > 0 && (
+            <span className="text-zinc-800">·</span>
+          )}
+          {story.tags.map((tag) => (
+            <span key={tag} className="text-zinc-600 transition-colors group-hover:text-zinc-500">
+              #{tag}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {/* Flèche */}
+      <div className="hidden items-center self-center text-zinc-800 transition-colors group-hover:text-red-900 sm:flex">
+        →
+      </div>
+    </Link>
   );
 }
