@@ -24,8 +24,8 @@ class StoryResource extends JsonResource
             'version' => $this->version,
             'tags' => $this->tags ?? [],
             'contentWarnings' => $this->content_warnings ?? [],
-            // Document structure en blocs : le front rend ce JSON, jamais du HTML brut.
-            'content' => $this->content ?? ['version' => 1, 'blocks' => []],
+            // Document JSON Tiptap : le front génère le HTML depuis ce JSON contrôlé.
+            'content' => $this->content ?? ['type' => 'doc', 'content' => []],
             'author' => $this->whenLoaded('author', fn () => [
                 'name' => $this->author?->name,
             ]),

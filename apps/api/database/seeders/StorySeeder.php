@@ -20,29 +20,14 @@ class StorySeeder extends Seeder
                 'word_count' => 1240,
                 'tags' => ['enquête', 'nuit'],
                 'content_warnings' => ['violence'],
-                'content' => [
-                    'version' => 1,
-                    'blocks' => [
-                        ['id' => 'b1', 'type' => 'heading', 'level' => 1, 'content' => 'Le Dernier Verre'],
-                        ['id' => 'b2', 'type' => 'content_warning', 'label' => 'Violence, ambiance oppressante'],
-                        ['id' => 'b3', 'type' => 'paragraph', 'content' => [
-                            ['type' => 'text', 'text' => 'La pluie tombait sur Nexus Noir comme si le ciel essayait de laver un crime trop ancien.'],
-                        ]],
-                        ['id' => 'b4', 'type' => 'paragraph', 'content' => [
-                            ['type' => 'text', 'text' => 'L\'enseigne du bar grésillait encore, dix ans après la dernière commande.'],
-                        ]],
-                        ['id' => 'b5', 'type' => 'dialogue', 'speaker' => 'La serveuse', 'content' => [
-                            ['type' => 'text', 'text' => 'On est fermés. On a toujours été fermés.'],
-                        ]],
-                        ['id' => 'b6', 'type' => 'scene_break'],
-                        ['id' => 'b7', 'type' => 'quote', 'content' => [
-                            ['type' => 'text', 'text' => 'Ici, on ne paie jamais la dernière tournée. On la rembourse.'],
-                        ]],
-                        ['id' => 'b8', 'type' => 'author_note', 'content' => [
-                            ['type' => 'text', 'text' => 'Première archive retrouvée dans le secteur 7.'],
-                        ]],
-                    ],
-                ],
+                'content' => $this->doc([
+                    $this->heading('Le Dernier Verre'),
+                    $this->paragraph('La pluie tombait sur Nexus Noir comme si le ciel essayait de laver un crime trop ancien.'),
+                    $this->paragraph('L\'enseigne du bar grésillait encore, dix ans après la dernière commande.'),
+                    $this->quote('Ici, on ne paie jamais la dernière tournée. On la rembourse.'),
+                    ['type' => 'horizontalRule'],
+                    $this->paragraph('La serveuse leva les yeux. « On est fermés. On a toujours été fermés. »'),
+                ]),
             ],
             [
                 'title' => 'Transmission 04:00',
@@ -52,22 +37,13 @@ class StorySeeder extends Seeder
                 'word_count' => 820,
                 'tags' => ['transmission', 'paranormal'],
                 'content_warnings' => [],
-                'content' => [
-                    'version' => 1,
-                    'blocks' => [
-                        ['id' => 'c1', 'type' => 'heading', 'level' => 1, 'content' => 'Transmission 04:00'],
-                        ['id' => 'c2', 'type' => 'paragraph', 'content' => [
-                            ['type' => 'text', 'text' => 'La radio n\'avait pas d\'antenne. Elle captait quand même.'],
-                        ]],
-                        ['id' => 'c3', 'type' => 'dialogue', 'speaker' => 'La voix', 'content' => [
-                            ['type' => 'text', 'text' => 'Tu es réveillé. Bien. Reste assis. Ne réponds pas à la porte.'],
-                        ]],
-                        ['id' => 'c4', 'type' => 'scene_break'],
-                        ['id' => 'c5', 'type' => 'paragraph', 'content' => [
-                            ['type' => 'text', 'text' => 'Dehors, le couloir comptait une porte de plus que la veille.'],
-                        ]],
-                    ],
-                ],
+                'content' => $this->doc([
+                    $this->heading('Transmission 04:00'),
+                    $this->paragraph('La radio n\'avait pas d\'antenne. Elle captait quand même.'),
+                    $this->quote('Tu es réveillé. Bien. Reste assis. Ne réponds pas à la porte.'),
+                    ['type' => 'horizontalRule'],
+                    $this->paragraph('Dehors, le couloir comptait une porte de plus que la veille.'),
+                ]),
             ],
         ];
 
@@ -82,5 +58,36 @@ class StorySeeder extends Seeder
                 ]),
             );
         }
+    }
+
+    /** @param array<int, array<string, mixed>> $content */
+    private function doc(array $content): array
+    {
+        return ['type' => 'doc', 'content' => $content];
+    }
+
+    private function heading(string $text): array
+    {
+        return [
+            'type' => 'heading',
+            'attrs' => ['level' => 2],
+            'content' => [['type' => 'text', 'text' => $text]],
+        ];
+    }
+
+    private function paragraph(string $text): array
+    {
+        return [
+            'type' => 'paragraph',
+            'content' => [['type' => 'text', 'text' => $text]],
+        ];
+    }
+
+    private function quote(string $text): array
+    {
+        return [
+            'type' => 'blockquote',
+            'content' => [$this->paragraph($text)],
+        ];
     }
 }

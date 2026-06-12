@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\V1\Admin\AdminStoryController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ReactionController;
@@ -37,5 +38,14 @@ Route::prefix('v1')->group(function () {
     // Bureau Noir — accès réservé aux rôles disposant de la permission admin.access.
     Route::middleware(['auth:sanctum', 'can:admin.access'])->prefix('admin')->group(function () {
         Route::get('/ping', fn () => response()->json(['message' => 'Bienvenue au Bureau Noir.']));
+
+        // Salle d'écriture — gestion des nouvelles (binding par id).
+        Route::get('/stories', [AdminStoryController::class, 'index'])->middleware('can:stories.view');
+        Route::post('/stories', [AdminStoryController::class, 'store'])->middleware('can:stories.create');
+        Route::get('/stories/{story:id}', [AdminStoryController::class, 'show'])->middleware('can:stories.view');
+        Route::patch('/stories/{story:id}', [AdminStoryController::class, 'update'])->middleware('can:stories.update');
+        Route::delete('/stories/{story:id}', [AdminStoryController::class, 'destroy'])->middleware('can:stories.delete');
+        Route::post('/stories/{story:id}/publish', [AdminStoryController::class, 'publish'])->middleware('can:stories.publish');
+        Route::post('/stories/{story:id}/unpublish', [AdminStoryController::class, 'unpublish'])->middleware('can:stories.publish');
     });
 });

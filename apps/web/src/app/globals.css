@@ -18,3 +18,70 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
 }
+
+/* Typographie de lecture d'une nouvelle (rendu public + aperçu éditeur). */
+.nn-prose {
+  color: #d4d4d8;
+  line-height: 1.75;
+}
+.nn-prose > * + * {
+  margin-top: 1.25rem;
+}
+.nn-prose h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin-top: 2.5rem;
+}
+.nn-prose h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #f4f4f5;
+  margin-top: 2rem;
+}
+.nn-prose strong {
+  color: #fafafa;
+  font-weight: 600;
+}
+.nn-prose em {
+  font-style: italic;
+}
+.nn-prose blockquote {
+  border-left: 4px solid #3f3f46;
+  padding-left: 1.25rem;
+  font-style: italic;
+  color: #a1a1aa;
+}
+.nn-prose ul,
+.nn-prose ol {
+  padding-left: 1.5rem;
+}
+.nn-prose ul {
+  list-style: disc;
+}
+.nn-prose ol {
+  list-style: decimal;
+}
+.nn-prose hr {
+  border: none;
+  text-align: center;
+  margin: 2.5rem 0;
+}
+.nn-prose hr::before {
+  content: "· · ·";
+  color: #52525b;
+  letter-spacing: 0.5em;
+  font-size: 1.25rem;
+}
+
+/* Zone d'édition Tiptap */
+.nn-editor p.is-editor-empty:first-child::before {
+  content: "Écris ton histoire…";
+  color: #52525b;
+  float: left;
+  height: 0;
+  pointer-events: none;
+}
+.ProseMirror:focus {
+  outline: none;
+}

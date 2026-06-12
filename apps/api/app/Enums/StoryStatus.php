@@ -16,4 +16,16 @@ enum StoryStatus: string
     {
         return $this === self::Published;
     }
+
+    public function label(): string
+    {
+        return match ($this) {
+            self::Draft => 'Brouillon',
+            self::InReview => 'En correction',
+            self::ReadyToPublish => 'Prêt à publier',
+            self::Published => 'Publié',
+            self::Archived => 'Archivé',
+            self::Private => 'Privé',
+        };
+    }
 }

@@ -1,33 +1,14 @@
 /**
- * Client API Nexus Noir.
+ * Client API Nexus Noir (lecture publique).
  *
- * Le contenu d'une nouvelle est un document structuré en blocs (JSON).
- * Le front rend ces blocs — il ne reçoit jamais de HTML brut à injecter.
+ * Le contenu d'une nouvelle est un document JSON Tiptap (ProseMirror).
+ * La page publique génère le HTML depuis ce JSON contrôlé (jamais de HTML brut).
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000/api/v1";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
-// --- Types des blocs ---
-
-export type InlineNode = {
-  type: "text";
-  text: string;
-};
-
-export type StoryBlock =
-  | { id: string; type: "heading"; level: 1 | 2 | 3; content: string }
-  | { id: string; type: "paragraph"; content: InlineNode[] }
-  | { id: string; type: "dialogue"; speaker?: string; content: InlineNode[] }
-  | { id: string; type: "quote"; content: InlineNode[] }
-  | { id: string; type: "author_note"; content: InlineNode[] }
-  | { id: string; type: "content_warning"; label: string }
-  | { id: string; type: "scene_break" };
-
-export type StoryDocument = {
-  version: number;
-  title?: string;
-  blocks: StoryBlock[];
-};
+/** Document Tiptap (ProseMirror) : { type: "doc", content: [...] }. */
+export type StoryDocument = { type: string; content?: unknown[] };
 
 // --- Types des ressources API ---
 

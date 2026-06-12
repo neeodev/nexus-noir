@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { fetchStory } from "@/lib/api";
-import { StoryRenderer } from "@/components/story/StoryRenderer";
+import { StoryContent } from "@/modules/editor/render";
 import { ReactionBar } from "@/modules/reactions/components/ReactionBar";
 import { CommentSection } from "@/modules/comments/components/CommentSection";
 
@@ -67,7 +67,7 @@ export default async function StoryPage({
         )}
       </div>
 
-      <StoryRenderer document={story.content} />
+      <StoryContent doc={story.content} />
 
       <ReactionBar slug={story.slug} />
 
