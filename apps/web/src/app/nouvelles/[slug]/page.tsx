@@ -47,7 +47,7 @@ export default async function StoryPage({
   }
 
   return (
-    <article>
+    <article className="mx-auto max-w-3xl">
       <Link
         href="/"
         className="mb-8 inline-block text-xs uppercase tracking-widest text-zinc-600 hover:text-red-500"

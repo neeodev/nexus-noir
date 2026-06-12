@@ -51,7 +51,7 @@ export function CommentSection({ slug }: { slug: string }) {
       {comments === null ? (
         <p className="text-sm text-zinc-700">…</p>
       ) : comments.length === 0 ? (
-        <p className="text-sm text-zinc-600">Aucun murmure pour l'instant.</p>
+        <p className="text-sm text-zinc-600">Aucun murmure pour l&apos;instant.</p>
       ) : (
         <div className="divide-y divide-zinc-900/60">
           {comments.map((comment) => (

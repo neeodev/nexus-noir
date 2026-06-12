@@ -86,31 +86,6 @@ function Toolbar({ editor }: { editor: Editor }) {
     }
   }
 
-  const Btn = ({
-    active,
-    onClick,
-    label,
-    title,
-  }: {
-    active?: boolean;
-    onClick: () => void;
-    label: string;
-    title: string;
-  }) => (
-    <button
-      type="button"
-      title={title}
-      onMouseDown={(e) => e.preventDefault()} // garde le focus dans l'éditeur
-      onClick={onClick}
-      className={[
-        "rounded px-2 py-1 text-sm transition-colors",
-        active ? "bg-red-900 text-zinc-100" : "text-zinc-400 hover:bg-zinc-800",
-      ].join(" ")}
-    >
-      {label}
-    </button>
-  );
-
   return (
     <div className="flex flex-wrap items-center gap-1 border-b border-zinc-800 px-2 py-2">
       <Btn title="Gras" label="G" active={s.bold} onClick={() => editor.chain().focus().toggleBold().run()} />
@@ -140,5 +115,32 @@ function Toolbar({ editor }: { editor: Editor }) {
         onChange={handleImageFile}
       />
     </div>
+  );
+}
+
+function Btn({
+  active,
+  onClick,
+  label,
+  title,
+}: {
+  active?: boolean;
+  onClick: () => void;
+  label: string;
+  title: string;
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      onMouseDown={(e) => e.preventDefault()} // garde le focus dans l'éditeur
+      onClick={onClick}
+      className={[
+        "rounded px-2 py-1 text-sm transition-colors",
+        active ? "bg-red-900 text-zinc-100" : "text-zinc-400 hover:bg-zinc-800",
+      ].join(" ")}
+    >
+      {label}
+    </button>
   );
 }

@@ -67,18 +67,13 @@ try {
   await page.click(".ProseMirror");
   await page.keyboard.type(MARK + " contenu de l'histoire.");
 
-  // Aperçu (à droite) : .nn-prose NON éditable contient le texte
-  const previewOk = await until(
+  // L'éditeur WYSIWYG reflète la frappe (plus d'aperçu séparé).
+  const typedOk = await until(
     page,
-    (m) => {
-      const previews = [...document.querySelectorAll(".nn-prose")].filter(
-        (el) => !el.classList.contains("nn-editor"),
-      );
-      return previews.some((el) => el.innerText.includes(m));
-    },
+    (m) => document.querySelector(".ProseMirror")?.innerText.includes(m),
     MARK,
   );
-  step(previewOk, "aperçu live reflète la frappe");
+  step(typedOk, "l'éditeur affiche la frappe");
 
   // Test d'un bouton de style : gras
   await page.evaluate(() => {
@@ -86,11 +81,8 @@ try {
     b?.click();
   });
   await page.keyboard.type("MotEnGras");
-  const boldOk = await until(page, () => {
-    const previews = [...document.querySelectorAll(".nn-prose")].filter((el) => !el.classList.contains("nn-editor"));
-    return previews.some((el) => el.querySelector("strong"));
-  });
-  step(boldOk, "bouton Gras produit du <strong> dans l'aperçu");
+  const boldOk = await until(page, () => !!document.querySelector(".ProseMirror strong"));
+  step(boldOk, "bouton Gras produit du <strong> dans l'éditeur");
 
   // Enregistrer
   await clickButton(page, "Enregistrer");

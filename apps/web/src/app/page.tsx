@@ -5,7 +5,7 @@ export default async function HomePage() {
   const stories = await fetchStories();
 
   return (
-    <div>
+    <div className="mx-auto max-w-3xl">
       <h1 className="mb-2 text-2xl font-semibold tracking-tight text-zinc-100">
         Archives
       </h1>

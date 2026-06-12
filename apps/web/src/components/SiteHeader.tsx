@@ -17,13 +17,16 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="border-b border-zinc-900">
-      <div className="mx-auto flex max-w-3xl items-center justify-between px-5 py-4">
-        <Link
-          href="/"
-          className="font-mono text-sm uppercase tracking-[0.3em] text-zinc-300 hover:text-red-500"
-        >
-          Nexus Noir
+    <header className="sticky top-0 z-20 border-b border-zinc-900 bg-[#08080a]/85 backdrop-blur">
+      <div className="h-px w-full bg-gradient-to-r from-transparent via-red-900/70 to-transparent" />
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
+        <Link href="/" className="group flex items-baseline gap-2">
+          <span className="font-mono text-sm uppercase tracking-[0.3em] text-zinc-200 group-hover:text-red-400">
+            Nexus Noir
+          </span>
+          <span className="hidden text-[0.65rem] uppercase tracking-widest text-zinc-600 sm:inline">
+            Archives
+          </span>
         </Link>
 
         <nav className="flex items-center gap-4 text-xs uppercase tracking-widest">

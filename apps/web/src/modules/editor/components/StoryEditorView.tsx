@@ -2,10 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import type { StoryDocument } from "@/lib/api";
 import { ApiError } from "@/lib/http";
-import { StoryContent } from "../render";
 import { emptyDoc } from "../extensions";
 import { adminStoriesApi, type AdminStory, type StoryInput, type StoryVersion } from "../api";
 import { mediaApi } from "../media";
@@ -31,8 +29,6 @@ const VISIBILITY_OPTIONS = [
 type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
 
 export function StoryEditorView({ storyId }: { storyId?: number }) {
-  const router = useRouter();
-
   const [loading, setLoading] = useState(Boolean(storyId));
   const [id, setId] = useState<number | undefined>(storyId);
   const [story, setStory] = useState<AdminStory | null>(null);
@@ -47,7 +43,10 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
   const [coverImage, setCoverImage] = useState<string | null>(null);
   const [content, setContent] = useState<StoryDocument>(emptyDoc);
   // Contenu initial figé pour l'éditeur (monté une seule fois).
-  const [initialContent, setInitialContent] = useState<StoryDocument | null>(null);
+  // En création (pas d'id), on part d'un document vide sans passer par un effet.
+  const [initialContent, setInitialContent] = useState<StoryDocument | null>(
+    storyId ? null : emptyDoc,
+  );
 
   const [saveState, setSaveState] = useState<SaveState>("idle");
   const [error, setError] = useState<string | null>(null);
@@ -61,10 +60,7 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
 
   // Charge la nouvelle existante.
   useEffect(() => {
-    if (!storyId) {
-      setInitialContent(emptyDoc);
-      return;
-    }
+    if (!storyId) return;
     let active = true;
     adminStoriesApi
       .get(storyId)
@@ -206,7 +202,7 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
         </Link>
         <div className="flex items-center gap-3 text-xs">
           <span className={saveState === "error" ? "text-red-400" : "text-zinc-500"}>{saveLabel}</span>
-          {idRef.current && (
+          {id && (
             <button
               type="button"
               onClick={toggleVersions}
@@ -293,9 +289,9 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
         className="mb-6 w-full bg-transparent text-2xl font-semibold tracking-tight text-zinc-100 outline-none placeholder:text-zinc-700"
       />
 
-      <div className="grid gap-8 lg:grid-cols-2">
-        {/* Colonne gauche : éditeur + paramètres */}
-        <div className="space-y-6">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_19rem]">
+        {/* Éditeur (large) — déjà WYSIWYG, donc plus d'aperçu séparé. */}
+        <div className="min-w-0">
           {initialContent !== null && (
             <StoryEditor
               key={editorKey}
@@ -306,108 +302,93 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
               }}
             />
           )}
+        </div>
 
-          <div className="space-y-4 rounded-md border border-zinc-900 bg-zinc-950/40 p-4">
-            <p className="text-xs uppercase tracking-widest text-zinc-600">Paramètres</p>
+        {/* Paramètres (barre latérale) */}
+        <aside className="space-y-4 self-start rounded-md border border-zinc-900 bg-zinc-950/40 p-4 lg:sticky lg:top-6">
+          <p className="text-xs uppercase tracking-widest text-zinc-600">Paramètres</p>
 
-            <CoverField
-              coverImage={coverImage}
-              onChange={(url) => {
-                setCoverImage(url);
+          <CoverField
+            coverImage={coverImage}
+            onChange={(url) => {
+              setCoverImage(url);
+              markDirty();
+            }}
+          />
+
+          <Field label="Résumé court">
+            <textarea
+              value={summaryShort}
+              onChange={(e) => {
+                setSummaryShort(e.target.value);
                 markDirty();
               }}
+              rows={3}
+              className={inputClass}
             />
+          </Field>
 
-            <Field label="Résumé court">
-              <textarea
-                value={summaryShort}
-                onChange={(e) => {
-                  setSummaryShort(e.target.value);
-                  markDirty();
-                }}
-                rows={2}
-                className={inputClass}
-              />
-            </Field>
+          <Field label="Statut">
+            <select
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                markDirty();
+              }}
+              className={inputClass}
+            >
+              {STATUS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </Field>
 
-            <div className="grid grid-cols-2 gap-4">
-              <Field label="Statut">
-                <select
-                  value={status}
-                  onChange={(e) => {
-                    setStatus(e.target.value);
-                    markDirty();
-                  }}
-                  className={inputClass}
-                >
-                  {STATUS_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </Field>
-              <Field label="Visibilité">
-                <select
-                  value={visibility}
-                  onChange={(e) => {
-                    setVisibility(e.target.value);
-                    markDirty();
-                  }}
-                  className={inputClass}
-                >
-                  {VISIBILITY_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </Field>
-            </div>
+          <Field label="Visibilité">
+            <select
+              value={visibility}
+              onChange={(e) => {
+                setVisibility(e.target.value);
+                markDirty();
+              }}
+              className={inputClass}
+            >
+              {VISIBILITY_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+          </Field>
 
-            <Field label="Tags (séparés par des virgules)">
-              <input
-                type="text"
-                value={tags}
-                onChange={(e) => {
-                  setTags(e.target.value);
-                  markDirty();
-                }}
-                className={inputClass}
-              />
-            </Field>
+          <Field label="Tags (virgules)">
+            <input
+              type="text"
+              value={tags}
+              onChange={(e) => {
+                setTags(e.target.value);
+                markDirty();
+              }}
+              className={inputClass}
+            />
+          </Field>
 
-            <Field label="Avertissements de contenu (virgules)">
-              <input
-                type="text"
-                value={warnings}
-                onChange={(e) => {
-                  setWarnings(e.target.value);
-                  markDirty();
-                }}
-                className={inputClass}
-              />
-            </Field>
+          <Field label="Avertissements (virgules)">
+            <input
+              type="text"
+              value={warnings}
+              onChange={(e) => {
+                setWarnings(e.target.value);
+                markDirty();
+              }}
+              className={inputClass}
+            />
+          </Field>
 
-            {story && (
-              <p className="text-xs text-zinc-600">
-                {story.wordCount} mots · {story.readingTime} min · v{story.version}
-                {story.slug && <> · /{story.slug}</>}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Colonne droite : aperçu live */}
-        <div className="lg:sticky lg:top-6 lg:self-start">
-          <p className="mb-3 text-xs uppercase tracking-widest text-zinc-600">Aperçu</p>
-          <div className="rounded-md border border-zinc-900 bg-zinc-950/40 p-5">
-            {coverImage && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={coverImage} alt="" className="mb-6 w-full rounded-md" />
-            )}
-            <h1 className="mb-6 text-2xl font-semibold tracking-tight text-zinc-100">
-              {title || "Titre de la nouvelle"}
-            </h1>
-            <StoryContent doc={content} />
-          </div>
-        </div>
+          {story && (
+            <p className="text-xs text-zinc-600">
+              {story.wordCount} mots · {story.readingTime} min · v{story.version}
+              {story.slug && <> · /{story.slug}</>}
+            </p>
+          )}
+        </aside>
       </div>
     </div>
   );
