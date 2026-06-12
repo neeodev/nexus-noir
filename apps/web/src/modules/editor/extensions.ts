@@ -1,6 +1,7 @@
 import StarterKit from "@tiptap/starter-kit";
 import type { Extensions } from "@tiptap/react";
 import type { StoryDocument } from "@/lib/api";
+import { Dialogue, Lore, Transmission, Violence } from "./customNodes";
 
 /**
  * Extensions Tiptap de Nexus Noir.
@@ -13,6 +14,10 @@ export const editorExtensions: Extensions = [
   StarterKit.configure({
     heading: { levels: [2, 3] },
   }),
+  Dialogue,
+  Lore,
+  Transmission,
+  Violence,
 ];
 
 /** Document vide par défaut (un paragraphe). */

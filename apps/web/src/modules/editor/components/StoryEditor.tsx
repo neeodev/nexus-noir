@@ -57,8 +57,18 @@ function Toolbar({ editor }: { editor: Editor }) {
       quote: editor.isActive("blockquote"),
       bullet: editor.isActive("bulletList"),
       ordered: editor.isActive("orderedList"),
+      dialogue: editor.isActive("dialogue"),
+      lore: editor.isActive("lore"),
+      transmission: editor.isActive("transmission"),
+      violence: editor.isActive("violence"),
     }),
   });
+
+  function promptSpeaker() {
+    const speaker = window.prompt("Locuteur (laisser vide pour aucun) :", "");
+    if (speaker === null) return;
+    editor.chain().focus().setDialogue().setDialogueSpeaker(speaker.trim()).run();
+  }
 
   const Btn = ({
     active,
@@ -99,6 +109,11 @@ function Toolbar({ editor }: { editor: Editor }) {
       <Btn title="Liste numérotée" label="1." active={s.ordered} onClick={() => editor.chain().focus().toggleOrderedList().run()} />
       <span className="mx-1 h-5 w-px bg-zinc-800" />
       <Btn title="Séparateur de scène" label="· · ·" onClick={() => editor.chain().focus().setHorizontalRule().run()} />
+      <span className="mx-1 h-5 w-px bg-zinc-800" />
+      <Btn title="Dialogue (avec locuteur)" label="💬" active={s.dialogue} onClick={promptSpeaker} />
+      <Btn title="Bloc lore" label="Lore" active={s.lore} onClick={() => editor.chain().focus().toggleLore().run()} />
+      <Btn title="Bloc transmission" label="Transm." active={s.transmission} onClick={() => editor.chain().focus().toggleTransmission().run()} />
+      <Btn title="Violence (mise en avant)" label="⚠ Violence" active={s.violence} onClick={() => editor.chain().focus().toggleViolence().run()} />
     </div>
   );
 }
