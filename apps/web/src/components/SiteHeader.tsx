@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/modules/auth/store";
+import { useAuthContext } from "@/modules/auth/store";
 import { useHasPermission } from "@/modules/auth/hooks";
 
 export function SiteHeader() {
   const router = useRouter();
-  const { user, status, logout } = useAuthStore();
+  const { user, status, logout } = useAuthContext();
   const canAccessAdmin = useHasPermission("admin.access");
 
   async function handleLogout() {

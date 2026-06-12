@@ -1,11 +1,11 @@
 "use client";
 
-import { create } from "zustand";
-import { type AuthUser, authApi } from "./api";
+import { createContext, useContext } from "react";
+import type { AuthUser } from "./api";
 
-type AuthStatus = "loading" | "authenticated" | "guest";
+export type AuthStatus = "loading" | "authenticated" | "guest";
 
-type AuthState = {
+export type AuthStore = {
   user: AuthUser | null;
   status: AuthStatus;
   fetchUser: () => Promise<void>;
@@ -19,27 +19,15 @@ type AuthState = {
   logout: () => Promise<void>;
 };
 
-export const useAuthStore = create<AuthState>((set) => ({
+export const AuthContext = createContext<AuthStore>({
   user: null,
   status: "loading",
+  fetchUser: async () => {},
+  register: async () => {},
+  login: async () => {},
+  logout: async () => {},
+});
 
-  async fetchUser() {
-    const user = await authApi.me();
-    set({ user, status: user ? "authenticated" : "guest" });
-  },
-
-  async register(payload) {
-    const user = await authApi.register(payload);
-    set({ user, status: "authenticated" });
-  },
-
-  async login(email, password) {
-    const user = await authApi.login(email, password);
-    set({ user, status: "authenticated" });
-  },
-
-  async logout() {
-    await authApi.logout();
-    set({ user: null, status: "guest" });
-  },
-}));
+export function useAuthContext(): AuthStore {
+  return useContext(AuthContext);
+}

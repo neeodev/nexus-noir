@@ -4,14 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ApiError } from "../api";
-import { useAuthStore } from "../store";
+import { useAuthContext } from "../store";
 
 type Mode = "login" | "register";
 
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
-  const login = useAuthStore((s) => s.login);
-  const register = useAuthStore((s) => s.register);
+  const { login, register } = useAuthContext();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");

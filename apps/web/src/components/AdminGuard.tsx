@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/modules/auth/store";
+import { useAuthContext } from "@/modules/auth/store";
 import { useHasPermission } from "@/modules/auth/hooks";
 
 /**
@@ -17,7 +17,7 @@ export function AdminGuard({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const status = useAuthStore((s) => s.status);
+  const { status } = useAuthContext();
   const allowed = useHasPermission(permission);
 
   useEffect(() => {
