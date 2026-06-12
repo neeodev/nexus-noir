@@ -9,10 +9,14 @@ use App\Http\Requests\Admin\StoreStoryRequest;
 use App\Http\Requests\Admin\UpdateStoryRequest;
 use App\Http\Resources\V1\AdminStoryResource;
 use App\Models\Story;
+use App\Models\StoryVersion;
 use App\Support\StoryContentMetrics;
+use App\Support\StoryVersioning;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpFoundation\Response;
 
 class AdminStoryController extends Controller
 {
@@ -51,9 +55,12 @@ class AdminStoryController extends Controller
             'content' => $content,
             'tags' => $data['tags'] ?? [],
             'content_warnings' => $data['contentWarnings'] ?? [],
+            'version' => 1,
             'word_count' => StoryContentMetrics::wordCount($content),
             'reading_time' => StoryContentMetrics::readingTime($content),
         ]);
+
+        StoryVersioning::snapshot($story, $request->user()->id, force: true);
 
         return new AdminStoryResource($story);
     }
@@ -89,7 +96,13 @@ class AdminStoryController extends Controller
             $story->version = $story->version + 1;
         }
 
+        $contentChanged = array_key_exists('content', $data);
         $story->save();
+
+        // Snapshot throttlé quand le contenu change (pour l'historique).
+        if ($contentChanged) {
+            StoryVersioning::snapshot($story, $request->user()->id);
+        }
 
         return new AdminStoryResource($story->load('author'));
     }
@@ -104,6 +117,8 @@ class AdminStoryController extends Controller
                 : $story->visibility,
             'published_at' => $story->published_at ?? now(),
         ]);
+
+        StoryVersioning::snapshot($story, request()->user()?->id, force: true);
 
         return new AdminStoryResource($story);
     }
@@ -121,6 +136,58 @@ class AdminStoryController extends Controller
         $story->delete();
 
         return response()->json(['message' => 'Nouvelle supprimée.']);
+    }
+
+    /** Historique des versions (métadonnées, plus récentes d'abord). */
+    public function versions(Story $story): JsonResponse
+    {
+        $versions = $story->versions()
+            ->with('author')
+            ->latest('created_at')
+            ->get()
+            ->map(fn (StoryVersion $v) => [
+                'id' => $v->id,
+                'version' => $v->version,
+                'title' => $v->title,
+                'wordCount' => $v->word_count,
+                'author' => $v->author?->name,
+                'createdAt' => $v->created_at?->toIso8601String(),
+            ]);
+
+        return response()->json(['data' => $versions]);
+    }
+
+    /** Contenu complet d'une version (pour aperçu avant restauration). */
+    public function showVersion(Story $story, StoryVersion $version): JsonResponse
+    {
+        abort_unless($version->story_id === $story->id, Response::HTTP_NOT_FOUND);
+
+        return response()->json([
+            'data' => [
+                'id' => $version->id,
+                'version' => $version->version,
+                'title' => $version->title,
+                'content' => $version->content ?? ['type' => 'doc', 'content' => []],
+            ],
+        ]);
+    }
+
+    /** Restaure le titre et le contenu d'une version (incrémente la version courante). */
+    public function restore(Story $story, StoryVersion $version): AdminStoryResource
+    {
+        abort_unless($version->story_id === $story->id, Response::HTTP_NOT_FOUND);
+
+        $story->fill([
+            'title' => $version->title,
+            'content' => $version->content,
+            'word_count' => StoryContentMetrics::wordCount($version->content),
+            'reading_time' => StoryContentMetrics::readingTime($version->content),
+            'version' => $story->version + 1,
+        ])->save();
+
+        StoryVersioning::snapshot($story, request()->user()?->id, force: true);
+
+        return new AdminStoryResource($story->load('author'));
     }
 
     /** Génère un slug unique à partir du titre si aucun n'est fourni. */

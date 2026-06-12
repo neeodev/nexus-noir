@@ -7,7 +7,7 @@ import type { StoryDocument } from "@/lib/api";
 import { ApiError } from "@/lib/http";
 import { StoryContent } from "../render";
 import { emptyDoc } from "../extensions";
-import { adminStoriesApi, type AdminStory, type StoryInput } from "../api";
+import { adminStoriesApi, type AdminStory, type StoryInput, type StoryVersion } from "../api";
 import { mediaApi } from "../media";
 import { StoryEditor } from "./StoryEditor";
 
@@ -53,6 +53,11 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
   const [error, setError] = useState<string | null>(null);
   const idRef = useRef<number | undefined>(storyId);
   const savingRef = useRef(false); // évite les sauvegardes concurrentes (doubles créations)
+
+  // Historique des versions
+  const [editorKey, setEditorKey] = useState(0); // incrémenté pour remonter l'éditeur
+  const [showVersions, setShowVersions] = useState(false);
+  const [versions, setVersions] = useState<StoryVersion[] | null>(null);
 
   // Charge la nouvelle existante.
   useEffect(() => {
@@ -159,6 +164,29 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
     setSaveState("saved");
   }
 
+  async function toggleVersions() {
+    const next = !showVersions;
+    setShowVersions(next);
+    if (next && idRef.current) {
+      setVersions(null);
+      setVersions(await adminStoriesApi.versions(idRef.current).catch(() => []));
+    }
+  }
+
+  async function handleRestore(versionId: number) {
+    if (!idRef.current) return;
+    if (!window.confirm("Restaurer cette version ? La version actuelle est conservée dans l'historique.")) return;
+    const restored = await adminStoriesApi.restoreVersion(idRef.current, versionId);
+    setStory(restored);
+    setTitle(restored.title);
+    setContent(restored.content);
+    setInitialContent(restored.content);
+    setEditorKey((k) => k + 1); // remonte l'éditeur avec le contenu restauré
+    setStatus(restored.status);
+    setShowVersions(false);
+    setSaveState("saved");
+  }
+
   if (loading) return <p className="text-zinc-600">Chargement…</p>;
 
   const isPublished = status === "published";
@@ -178,6 +206,15 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
         </Link>
         <div className="flex items-center gap-3 text-xs">
           <span className={saveState === "error" ? "text-red-400" : "text-zinc-500"}>{saveLabel}</span>
+          {idRef.current && (
+            <button
+              type="button"
+              onClick={toggleVersions}
+              className="rounded border border-zinc-700 px-3 py-1.5 uppercase tracking-widest text-zinc-300 hover:border-zinc-500"
+            >
+              Versions
+            </button>
+          )}
           <button
             type="button"
             onClick={save}
@@ -216,6 +253,35 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
 
       {error && <p className="mb-4 rounded border border-red-900/60 bg-red-950/30 px-3 py-2 text-sm text-red-300">{error}</p>}
 
+      {showVersions && (
+        <div className="mb-6 rounded-md border border-zinc-800 bg-zinc-950/60 p-4">
+          <p className="mb-3 text-xs uppercase tracking-widest text-zinc-600">Historique des versions</p>
+          {versions === null ? (
+            <p className="text-sm text-zinc-700">…</p>
+          ) : versions.length === 0 ? (
+            <p className="text-sm text-zinc-600">Aucune version enregistrée.</p>
+          ) : (
+            <ul className="divide-y divide-zinc-900">
+              {versions.map((v) => (
+                <li key={v.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <span className="text-zinc-400">
+                    {formatVersionDate(v.createdAt)}
+                    <span className="ml-2 text-zinc-600">v{v.version} · {v.wordCount} mots{v.author ? ` · ${v.author}` : ""}</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleRestore(v.id)}
+                    className="shrink-0 rounded border border-zinc-700 px-2.5 py-1 text-xs uppercase tracking-widest text-zinc-300 hover:border-red-700 hover:text-red-300"
+                  >
+                    Restaurer
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      )}
+
       <input
         type="text"
         value={title}
@@ -232,6 +298,7 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
         <div className="space-y-6">
           {initialContent !== null && (
             <StoryEditor
+              key={editorKey}
               initialContent={initialContent}
               onChange={(doc) => {
                 setContent(doc);
@@ -344,6 +411,20 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
       </div>
     </div>
   );
+}
+
+function formatVersionDate(iso: string | null): string {
+  if (!iso) return "—";
+  try {
+    return new Date(iso).toLocaleString("fr-FR", {
+      day: "numeric",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  } catch {
+    return "—";
+  }
 }
 
 const inputClass =

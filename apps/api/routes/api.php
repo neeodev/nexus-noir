@@ -49,6 +49,11 @@ Route::prefix('v1')->group(function () {
         Route::post('/stories/{story:id}/publish', [AdminStoryController::class, 'publish'])->middleware('can:stories.publish');
         Route::post('/stories/{story:id}/unpublish', [AdminStoryController::class, 'unpublish'])->middleware('can:stories.publish');
 
+        // Historique des versions
+        Route::get('/stories/{story:id}/versions', [AdminStoryController::class, 'versions'])->middleware('can:stories.view');
+        Route::get('/stories/{story:id}/versions/{version}', [AdminStoryController::class, 'showVersion'])->middleware('can:stories.view');
+        Route::post('/stories/{story:id}/versions/{version}/restore', [AdminStoryController::class, 'restore'])->middleware('can:stories.update');
+
         // Preuves — upload d'images.
         Route::post('/media', [MediaController::class, 'store'])->middleware('can:stories.create');
     });

@@ -67,6 +67,11 @@ class Story extends Model
         return $this->hasMany(Comment::class);
     }
 
+    public function versions(): HasMany
+    {
+        return $this->hasMany(StoryVersion::class);
+    }
+
     /** Nouvelles publiees et accessibles publiquement. */
     public function scopePublished(Builder $query): Builder
     {

@@ -37,6 +37,15 @@ export type StoryInput = Partial<{
   contentWarnings: string[];
 }>;
 
+export type StoryVersion = {
+  id: number;
+  version: number;
+  title: string;
+  wordCount: number;
+  author: string | null;
+  createdAt: string | null;
+};
+
 type Wrapped<T> = { data: T };
 
 export const adminStoriesApi = {
@@ -72,5 +81,18 @@ export const adminStoriesApi = {
 
   remove(id: number): Promise<unknown> {
     return apiSend<unknown>(`/admin/stories/${id}`, "DELETE");
+  },
+
+  async versions(id: number): Promise<StoryVersion[]> {
+    const res = await apiGet<Wrapped<StoryVersion[]>>(`/admin/stories/${id}/versions`);
+    return res.data;
+  },
+
+  async restoreVersion(id: number, versionId: number): Promise<AdminStory> {
+    const res = await apiSend<Wrapped<AdminStory>>(
+      `/admin/stories/${id}/versions/${versionId}/restore`,
+      "POST",
+    );
+    return res.data;
   },
 };
