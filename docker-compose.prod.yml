@@ -1,0 +1,36 @@
+# Surcharge production — utiliser avec :
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d --build
+
+services:
+
+  # Postgres et Redis ne sont plus accessibles depuis l'extérieur
+  postgres:
+    ports: !reset []
+
+  redis:
+    ports: !reset []
+
+  # L'API n'est plus exposée directement (Caddy fait le routing)
+  api:
+    ports: !reset []
+
+  # Le frontend non plus
+  web:
+    ports: !reset []
+
+  # Caddy — reverse proxy + SSL automatique (Let's Encrypt)
+  caddy:
+    image: caddy:2-alpine
+    container_name: nexus_noir_caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./docker/caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./docker/data/caddy:/data
+      - ./docker/data/caddy-config:/config
+    depends_on:
+      - web
+      - api

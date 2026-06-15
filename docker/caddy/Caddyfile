@@ -1,0 +1,15 @@
+# Remplace nexus-noir.ch par ton vrai domaine
+# Caddy gère le SSL Let's Encrypt automatiquement
+
+nexus-noir.ch, www.nexus-noir.ch {
+    reverse_proxy web:3000
+}
+
+api.nexus-noir.ch {
+    reverse_proxy api:80
+
+    header {
+        Access-Control-Allow-Origin "https://nexus-noir.ch"
+        Access-Control-Allow-Credentials "true"
+    }
+}
