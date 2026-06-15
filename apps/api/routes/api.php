@@ -7,11 +7,13 @@ use App\Http\Controllers\Api\V1\Admin\ModerationController;
 use App\Http\Controllers\Api\V1\Admin\StatsController;
 use App\Http\Controllers\Api\V1\Admin\UserBadgeController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
+use App\Http\Controllers\Api\V1\Admin\ReportsController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReactionController;
 use App\Http\Controllers\Api\V1\RedeemBadgeController;
+use App\Http\Controllers\Api\V1\ReportController;
 use App\Http\Controllers\Api\V1\StoryController;
 use App\Http\Controllers\Api\V1\StoryViewController;
 use Illuminate\Support\Facades\Route;
@@ -53,6 +55,7 @@ Route::prefix('v1')->group(function () {
             ->middleware('can:comments.create');
         Route::delete('/comments/{comment}', [CommentController::class, 'destroy']);
         Route::patch('/comments/{comment}/moderate', [CommentController::class, 'moderate']);
+        Route::post('/comments/{comment}/report', [ReportController::class, 'store']);
     });
 
     // Bureau Noir — accès réservé aux rôles disposant de la permission admin.access.
@@ -84,6 +87,12 @@ Route::prefix('v1')->group(function () {
 
         // Modération des commentaires.
         Route::get('/comments', [ModerationController::class, 'index'])->middleware('can:comments.moderate');
+
+        // Signalements.
+        Route::middleware('can:comments.moderate')->group(function () {
+            Route::get('/reports', [ReportsController::class, 'index']);
+            Route::patch('/reports/{report}', [ReportsController::class, 'update']);
+        });
 
         // Gestion des utilisateurs.
         Route::middleware('can:users.manage')->group(function () {

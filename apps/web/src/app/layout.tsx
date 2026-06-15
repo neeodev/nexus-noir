@@ -15,13 +15,25 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
+
 export const metadata: Metadata = {
   title: {
     default: "Nexus Noir",
     template: "%s — Nexus Noir",
   },
-  description:
-    "Archives de l'univers Nexus Noir. Des nouvelles retrouvées dans une ville malade.",
+  description: "Archives de l'univers Nexus Noir. Des nouvelles retrouvées dans une ville malade.",
+  metadataBase: new URL(siteUrl),
+  openGraph: {
+    siteName: "Nexus Noir",
+    locale: "fr_FR",
+    type: "website",
+    images: [{ url: "/og-default.jpg", alt: "Nexus Noir" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    site: "@nexus_noir",
+  },
 };
 
 export default function RootLayout({

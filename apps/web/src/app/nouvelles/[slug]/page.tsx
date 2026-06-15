@@ -21,16 +21,30 @@ export async function generateMetadata({
     return { title: "Archive introuvable" };
   }
 
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3001";
   const description = story.summaryShort ?? story.summaryLong ?? undefined;
+  const url = `${siteUrl}/nouvelles/${slug}`;
 
   return {
     title: story.title,
     description,
     openGraph: {
-      title: story.title,
+      title: `${story.title} — Nexus Noir`,
       description,
       type: "article",
-      images: story.coverImage ? [story.coverImage] : undefined,
+      url,
+      siteName: "Nexus Noir",
+      locale: "fr_FR",
+      publishedTime: story.publishedAt ?? undefined,
+      images: story.coverImage
+        ? [{ url: story.coverImage, alt: story.title }]
+        : [{ url: `${siteUrl}/og-default.jpg`, alt: "Nexus Noir" }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${story.title} — Nexus Noir`,
+      description,
+      images: story.coverImage ? [story.coverImage] : [`${siteUrl}/og-default.jpg`],
     },
   };
 }

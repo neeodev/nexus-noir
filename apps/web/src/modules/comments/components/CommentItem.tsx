@@ -32,6 +32,10 @@ export function CommentItem({
 }) {
   const { isAuthenticated } = useAuth();
   const [replying, setReplying] = useState(false);
+  const [reporting, setReporting] = useState(false);
+  const [reportReason, setReportReason] = useState("spam");
+  const [reportBody, setReportBody] = useState("");
+  const [reported, setReported] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const muted = comment.isDeleted || comment.isHidden;
@@ -110,7 +114,59 @@ export function CommentItem({
               Supprimer
             </button>
           )}
+          {comment.can.report && !reported && (
+            <button
+              type="button"
+              onClick={() => setReporting((v) => !v)}
+              className="uppercase tracking-widest text-zinc-600 hover:text-amber-500"
+            >
+              {reporting ? "Annuler" : "Signaler"}
+            </button>
+          )}
+          {reported && (
+            <span className="uppercase tracking-widest text-zinc-600">Signalé</span>
+          )}
         </div>
+
+        {reporting && (
+          <div className="mt-3 rounded-md border border-zinc-800 bg-zinc-950 p-3 space-y-2">
+            <select
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              className="w-full rounded border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-300 outline-none"
+            >
+              <option value="spam">Spam</option>
+              <option value="harassment">Harcèlement</option>
+              <option value="spoiler">Spoiler non signalé</option>
+              <option value="off_topic">Hors sujet</option>
+              <option value="other">Autre</option>
+            </select>
+            <textarea
+              value={reportBody}
+              onChange={(e) => setReportBody(e.target.value)}
+              placeholder="Précisions (optionnel)"
+              rows={2}
+              className="w-full resize-none rounded border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-xs text-zinc-300 placeholder-zinc-600 outline-none"
+            />
+            <button
+              type="button"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await commentsApi.report(comment.id, reportReason, reportBody || undefined);
+                  setReporting(false);
+                  setReported(true);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+              className="rounded bg-amber-900/40 px-3 py-1 text-xs text-amber-300 hover:bg-amber-900/60 disabled:opacity-50"
+            >
+              Envoyer le signalement
+            </button>
+          </div>
+        )}
 
         {replying && (
           <div className="mt-3">

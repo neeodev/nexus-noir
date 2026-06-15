@@ -38,9 +38,10 @@ class CommentResource extends JsonResource
             'isDeleted' => $deleted,
             'createdAt' => $this->created_at?->toIso8601String(),
             'can' => [
-                'delete' => ! $deleted && ($isOwner || $canModerate),
+                'delete'   => ! $deleted && ($isOwner || $canModerate),
                 'moderate' => ! $deleted && $canModerate,
-                'reply' => ! $deleted,
+                'report'   => ! $deleted && $user && ! $isOwner,
+                'reply'    => ! $deleted,
             ],
             'replies' => CommentResource::collection($this->whenLoaded('replies')),
             'story' => $this->whenLoaded('story', fn () => [

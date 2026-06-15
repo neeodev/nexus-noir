@@ -10,7 +10,7 @@ export type Comment = {
   isHidden: boolean;
   isDeleted: boolean;
   createdAt: string | null;
-  can: { delete: boolean; moderate: boolean; reply: boolean };
+  can: { delete: boolean; moderate: boolean; report: boolean; reply: boolean };
   replies: Comment[];
   story?: { id: number; title: string; slug: string };
 };
@@ -54,6 +54,14 @@ export const commentsApi = {
       changes,
     );
     return res.data;
+  },
+
+  async report(
+    commentId: number,
+    reason: string,
+    body?: string,
+  ): Promise<{ message: string }> {
+    return apiSend<{ message: string }>(`/comments/${commentId}/report`, "POST", { reason, body: body ?? null });
   },
 
   async adminList(params: {
