@@ -5,6 +5,8 @@
  * La page publique génère le HTML depuis ce JSON contrôlé (jamais de HTML brut).
  */
 
+import type { Badge } from "@/modules/auth/api";
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
 // Racine du serveur Laravel (sans /api/v1) pour le cookie CSRF de Sanctum.
@@ -75,16 +77,17 @@ export async function fetchStory(slug: string): Promise<Story | null> {
   }
 }
 
-export async function trackView(slug: string): Promise<number> {
+export type TrackViewResult = { views: number; newBadges: Badge[] };
+
+export async function trackView(slug: string): Promise<TrackViewResult> {
   await ensureCsrf();
   const res = await fetch(`${API_URL}/stories/${encodeURIComponent(slug)}/view`, {
     method: "POST",
     headers: { Accept: "application/json", "X-XSRF-TOKEN": getXsrfToken() },
     credentials: "include",
   });
-  if (!res.ok) return 0;
-  const json = (await res.json()) as { views: number };
-  return json.views;
+  if (!res.ok) return { views: 0, newBadges: [] };
+  return res.json() as Promise<TrackViewResult>;
 }
 
 export type AdminStats = {

@@ -1,4 +1,5 @@
 import { apiGet, apiSend } from "@/lib/http";
+import type { Badge } from "@/modules/auth/api";
 
 export type ReactionCount = {
   type: string;
@@ -11,6 +12,7 @@ export type ReactionSummary = {
   total: number;
   userReaction: string | null;
   reactions: ReactionCount[];
+  newBadges?: Badge[];
 };
 
 export const reactionsApi = {

@@ -50,11 +50,12 @@ class CommentController extends Controller
             'body' => (string) $request->string('body'),
         ]);
 
-        \App\Support\BadgeAwarder::onComment($request->user());
+        $newBadges = \App\Support\BadgeAwarder::onComment($request->user());
 
-        return (new CommentResource($comment->load('user')))
-            ->response()
-            ->setStatusCode(Response::HTTP_CREATED);
+        return response()->json([
+            'data'      => new CommentResource($comment->load('user')),
+            'newBadges' => \App\Http\Resources\V1\BadgeResource::collection(collect($newBadges)),
+        ], Response::HTTP_CREATED);
     }
 
     /** Supprime (soft delete) : auteur ou modérateur. */

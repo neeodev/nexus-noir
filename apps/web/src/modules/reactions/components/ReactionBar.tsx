@@ -4,11 +4,13 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/modules/auth/hooks";
 import { ApiError } from "@/lib/http";
+import { useBadgeNotify } from "@/components/BadgeNotificationProvider";
 import { reactionsApi, type ReactionSummary } from "../api";
 
 export function ReactionBar({ slug }: { slug: string }) {
   const router = useRouter();
   const { isAuthenticated, status } = useAuth();
+  const notify = useBadgeNotify();
   const [summary, setSummary] = useState<ReactionSummary | null>(null);
   const [pending, setPending] = useState<string | null>(null);
 
@@ -38,6 +40,9 @@ export function ReactionBar({ slug }: { slug: string }) {
     try {
       const updated = await reactionsApi.toggle(slug, type);
       setSummary(updated);
+      if (updated.newBadges?.length) {
+        notify(updated.newBadges);
+      }
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
         router.push("/connexion");

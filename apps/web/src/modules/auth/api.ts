@@ -47,9 +47,9 @@ type RegisterPayload = {
 type Wrapped<T> = { data: T };
 
 export const authApi = {
-  async register(payload: RegisterPayload): Promise<AuthUser> {
-    const res = await apiSend<Wrapped<AuthUser>>("/auth/register", "POST", payload);
-    return res.data;
+  async register(payload: RegisterPayload): Promise<{ user: AuthUser; newBadges: Badge[] }> {
+    const res = await apiSend<{ data: AuthUser; newBadges: Badge[] }>("/auth/register", "POST", payload);
+    return { user: res.data, newBadges: res.newBadges };
   },
 
   async login(email: string, password: string): Promise<AuthUser> {

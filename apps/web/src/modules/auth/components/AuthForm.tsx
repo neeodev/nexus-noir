@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useBadgeNotify } from "@/components/BadgeNotificationProvider";
 import { ApiError } from "../api";
 import { useAuthContext } from "../store";
 
@@ -11,6 +12,7 @@ type Mode = "login" | "register";
 export function AuthForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const { login, register } = useAuthContext();
+  const notify = useBadgeNotify();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -30,17 +32,19 @@ export function AuthForm({ mode }: { mode: Mode }) {
 
     try {
       if (isRegister) {
-        await register({
+        const newBadges = await register({
           name,
           email,
           password,
           password_confirmation: passwordConfirm,
         });
+        if (newBadges.length) {
+          notify(newBadges);
+        }
       } else {
         await login(email, password);
       }
       router.push("/");
-      router.refresh();
     } catch (error) {
       if (error instanceof ApiError) {
         setErrors(error.errors);

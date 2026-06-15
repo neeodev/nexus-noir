@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\V1\BadgeResource;
 use App\Models\Story;
 use App\Models\StoryView;
 use App\Support\BadgeAwarder;
@@ -44,10 +45,15 @@ class StoryViewController extends Controller
             ]);
 
             if ($request->user()) {
-                BadgeAwarder::onView($request->user(), $story);
+                $newBadges = BadgeAwarder::onView($request->user(), $story);
             }
         }
 
-        return response()->json(['views' => $story->views()->count()]);
+        $newBadges ??= [];
+
+        return response()->json([
+            'views'     => $story->views()->count(),
+            'newBadges' => BadgeResource::collection(collect($newBadges)),
+        ]);
     }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext } from "react";
-import type { AuthUser } from "./api";
+import type { AuthUser, Badge } from "./api";
 
 export type AuthStatus = "loading" | "authenticated" | "guest";
 
@@ -14,7 +14,7 @@ export type AuthStore = {
     email: string;
     password: string;
     password_confirmation: string;
-  }) => Promise<void>;
+  }) => Promise<Badge[]>;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 };
@@ -23,7 +23,7 @@ export const AuthContext = createContext<AuthStore>({
   user: null,
   status: "loading",
   fetchUser: async () => {},
-  register: async () => {},
+  register: async () => [],
   login: async () => {},
   logout: async () => {},
 });

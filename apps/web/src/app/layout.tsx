@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { AuthProvider } from "@/modules/auth/AuthProvider";
+import { BadgeNotificationProvider } from "@/components/BadgeNotificationProvider";
 import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
@@ -35,11 +36,13 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <AuthProvider>
-          <SiteHeader />
-          <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">{children}</main>
-          <footer className="border-t border-zinc-900 py-6 text-center text-xs text-zinc-600">
-            Nexus Noir — la ville regarde ses lecteurs droit dans les yeux.
-          </footer>
+          <BadgeNotificationProvider>
+            <SiteHeader />
+            <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10 sm:px-6">{children}</main>
+            <footer className="border-t border-zinc-900 py-6 text-center text-xs text-zinc-600">
+              Nexus Noir — la ville regarde ses lecteurs droit dans les yeux.
+            </footer>
+          </BadgeNotificationProvider>
         </AuthProvider>
       </body>
     </html>

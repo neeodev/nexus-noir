@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ApiError } from "@/lib/http";
+import { useBadgeNotify } from "@/components/BadgeNotificationProvider";
 import { commentsApi } from "../api";
 
 export function CommentForm({
@@ -19,6 +20,7 @@ export function CommentForm({
   placeholder?: string;
   autoFocus?: boolean;
 }) {
+  const notify = useBadgeNotify();
   const [body, setBody] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -29,7 +31,10 @@ export function CommentForm({
     setSubmitting(true);
     setError(null);
     try {
-      await commentsApi.post(slug, body.trim(), parentId);
+      const result = await commentsApi.post(slug, body.trim(), parentId);
+      if (result.newBadges?.length) {
+        notify(result.newBadges);
+      }
       setBody("");
       onPosted();
     } catch (err) {

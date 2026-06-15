@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Support;
 
 use App\Models\Badge;
@@ -12,132 +11,140 @@ use Illuminate\Support\Carbon;
 
 class BadgeAwarder
 {
-    public static function onRegister(User $user): void
+    /** @return Badge[] */
+    public static function onRegister(User $user): array
     {
-        self::awardByCondition($user, 'register');
-        self::awardOgMember($user);
+        return array_merge(
+            self::awardByCondition($user, 'register'),
+            self::awardOgMember($user),
+        );
     }
 
-    public static function onView(User $user, ?\App\Models\Story $story = null): void
+    /** @return Badge[] */
+    public static function onView(User $user, ?\App\Models\Story $story = null): array
     {
         $count = StoryView::query()
             ->where('user_id', $user->id)
             ->distinct('story_id')
             ->count('story_id');
 
-        self::awardByConditionThreshold($user, 'readings_count', $count);
+        $awarded = array_merge(
+            self::awardByConditionThreshold($user, 'readings_count', $count),
+            self::checkAccountAge($user),
+        );
 
-        // Lecteur de nuit : entre 00h00 et 04h00 UTC
         if (Carbon::now('UTC')->hour < 4) {
-            self::awardByCondition($user, 'reading_at_night');
+            $awarded = array_merge($awarded, self::awardByCondition($user, 'reading_at_night'));
         }
 
-        // Early bird : X premières minutes après publication
         if ($story?->published_at) {
             $elapsed = (int) Carbon::now()->diffInMinutes($story->published_at, absolute: true);
-            self::awardEarlyBird($user, $elapsed);
+            $awarded = array_merge($awarded, self::awardEarlyBird($user, $elapsed));
         }
 
-        self::checkAccountAge($user);
+        return $awarded;
     }
 
-    public static function onReaction(User $user): void
+    /** @return Badge[] */
+    public static function onReaction(User $user): array
     {
         $count = StoryReaction::query()
             ->where('user_id', $user->id)
             ->count();
 
-        self::awardByConditionThreshold($user, 'reactions_given', $count);
+        return self::awardByConditionThreshold($user, 'reactions_given', $count);
     }
 
-    public static function onComment(User $user): void
+    /** @return Badge[] */
+    public static function onComment(User $user): array
     {
         $count = Comment::query()
             ->where('user_id', $user->id)
             ->count();
 
-        self::awardByConditionThreshold($user, 'comments_count', $count);
+        return self::awardByConditionThreshold($user, 'comments_count', $count);
     }
 
-    /** Retourne les badges débloqués, ou [] si code invalide. */
+    /** @return Badge[] */
     public static function onSecretCode(User $user, string $code): array
     {
-        $badges = Badge::query()
+        return Badge::query()
             ->active()
             ->where('condition_type', 'secret_code')
             ->get()
-            ->filter(fn ($badge) => ($badge->condition_meta['code'] ?? null) === $code);
-
-        $awarded = [];
-        foreach ($badges as $badge) {
-            if (self::award($user, $badge)) {
-                $awarded[] = $badge;
-            }
-        }
-        return $awarded;
+            ->filter(fn ($badge) => ($badge->condition_meta['code'] ?? null) === $code)
+            ->filter(fn ($badge) => self::award($user, $badge))
+            ->values()
+            ->all();
     }
 
-    private static function checkAccountAge(User $user): void
+    /** @return Badge[] */
+    private static function checkAccountAge(User $user): array
     {
         $days = (int) Carbon::now()->diffInDays($user->created_at, absolute: true);
-        self::awardByConditionThreshold($user, 'account_age', $days);
+        return self::awardByConditionThreshold($user, 'account_age', $days);
     }
 
-    private static function awardOgMember(User $user): void
+    /** @return Badge[] */
+    private static function awardOgMember(User $user): array
     {
-        Badge::query()
+        return Badge::query()
             ->active()
             ->where('condition_type', 'og_member')
             ->get()
-            ->each(function (Badge $badge) use ($user) {
+            ->filter(function (Badge $badge) use ($user) {
                 $meta = $badge->condition_meta ?? [];
-                if (empty($meta['launch_date'])) {
-                    return;
-                }
+                if (empty($meta['launch_date'])) return false;
 
                 $launchDate  = Carbon::parse($meta['launch_date'])->startOfDay();
                 $windowDays  = (int) ($meta['window_days'] ?? 7);
                 $registeredAt = Carbon::parse($user->created_at);
 
-                if ($registeredAt->between($launchDate, $launchDate->copy()->addDays($windowDays))) {
-                    self::award($user, $badge);
-                }
-            });
+                return $registeredAt->between($launchDate, $launchDate->copy()->addDays($windowDays))
+                    && self::award($user, $badge);
+            })
+            ->values()
+            ->all();
     }
 
-    private static function awardEarlyBird(User $user, int $elapsedMinutes): void
+    /** @return Badge[] */
+    private static function awardEarlyBird(User $user, int $elapsedMinutes): array
     {
-        $badges = Badge::query()
+        return Badge::query()
             ->active()
             ->where('condition_type', 'early_bird')
             ->where('condition_value', '>=', $elapsedMinutes)
-            ->get();
-
-        foreach ($badges as $badge) {
-            self::award($user, $badge);
-        }
+            ->get()
+            ->filter(fn ($badge) => self::award($user, $badge))
+            ->values()
+            ->all();
     }
 
-    private static function awardByCondition(User $user, string $conditionType): void
+    /** @return Badge[] */
+    private static function awardByCondition(User $user, string $conditionType): array
     {
-        Badge::query()
+        return Badge::query()
             ->active()
             ->where('condition_type', $conditionType)
             ->get()
-            ->each(fn ($badge) => self::award($user, $badge));
+            ->filter(fn ($badge) => self::award($user, $badge))
+            ->values()
+            ->all();
     }
 
-    private static function awardByConditionThreshold(User $user, string $conditionType, int $currentCount): void
+    /** @return Badge[] */
+    private static function awardByConditionThreshold(User $user, string $conditionType, int $currentCount): array
     {
-        Badge::query()
+        return Badge::query()
             ->active()
             ->where('condition_type', $conditionType)
             ->where('condition_value', '<=', $currentCount)
             ->get()
-            ->each(fn ($badge) => self::award($user, $badge));
+            ->filter(fn ($badge) => self::award($user, $badge))
+            ->values()
+            ->all();
     }
 
-    /** Retourne true si le badge a été décerné (false si déjà possédé). */
     private static function award(User $user, Badge $badge): bool
     {
         if ($user->badges()->where('badge_id', $badge->id)->exists()) {

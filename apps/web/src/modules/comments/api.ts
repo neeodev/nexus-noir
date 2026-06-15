@@ -1,4 +1,5 @@
 import { apiGet, apiSend } from "@/lib/http";
+import type { Badge } from "@/modules/auth/api";
 
 export type Comment = {
   id: number;
@@ -15,6 +16,8 @@ export type Comment = {
 
 type Wrapped<T> = { data: T };
 
+type CommentPostResult = { data: Comment; newBadges: Badge[] };
+
 export const commentsApi = {
   async list(slug: string): Promise<Comment[]> {
     const res = await apiGet<Wrapped<Comment[]>>(
@@ -23,13 +26,12 @@ export const commentsApi = {
     return res.data;
   },
 
-  async post(slug: string, body: string, parentId?: number): Promise<Comment> {
-    const res = await apiSend<Wrapped<Comment>>(
+  async post(slug: string, body: string, parentId?: number): Promise<CommentPostResult> {
+    return apiSend<CommentPostResult>(
       `/stories/${encodeURIComponent(slug)}/comments`,
       "POST",
       { body, parentId: parentId ?? null },
     );
-    return res.data;
   },
 
   remove(commentId: number): Promise<unknown> {

@@ -25,8 +25,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const register = useCallback(
     async (payload: Parameters<AuthStore["register"]>[0]) => {
-      const u = await authApi.register(payload);
-      dispatch({ type: "set", user: u });
+      const result = await authApi.register(payload);
+      dispatch({ type: "set", user: result.user });
+      return result.newBadges;
     },
     [],
   );

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api\V1;
 
 use App\Enums\ReactionType;
 use App\Http\Controllers\Controller;
+use App\Http\Resources\V1\BadgeResource;
 use App\Models\Story;
 use App\Support\BadgeAwarder;
 use Illuminate\Http\JsonResponse;
@@ -36,6 +37,8 @@ class ReactionController extends Controller
 
         $existing = $story->reactions()->where('user_id', $user->id)->first();
 
+        $newBadges = [];
+
         if ($existing && $existing->type === $type) {
             $existing->delete();
         } else {
@@ -43,10 +46,13 @@ class ReactionController extends Controller
                 ['user_id' => $user->id],
                 ['type' => $type],
             );
-            BadgeAwarder::onReaction($user);
+            $newBadges = BadgeAwarder::onReaction($user);
         }
 
-        return response()->json($this->summary($story->refresh(), $request));
+        $summary = $this->summary($story->refresh(), $request);
+        $summary['newBadges'] = BadgeResource::collection(collect($newBadges));
+
+        return response()->json($summary);
     }
 
     private function findPublishedStory(string $slug): Story

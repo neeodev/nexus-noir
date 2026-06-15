@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
+use App\Http\Resources\V1\BadgeResource;
 use App\Http\Resources\V1\UserResource;
 use App\Models\User;
 use App\Support\BadgeAwarder;
@@ -17,7 +18,7 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     /** Inscription + connexion immediate (session SPA). */
-    public function register(RegisterRequest $request): UserResource
+    public function register(RegisterRequest $request): JsonResponse
     {
         $user = User::create([
             'name' => $request->string('name'),
@@ -27,9 +28,13 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
-        BadgeAwarder::onRegister($user);
 
-        return new UserResource($user);
+        $newBadges = BadgeAwarder::onRegister($user);
+
+        return response()->json([
+            'data'      => new UserResource($user),
+            'newBadges' => BadgeResource::collection(collect($newBadges)),
+        ]);
     }
 
     /** Connexion par session (cookies Sanctum). */
