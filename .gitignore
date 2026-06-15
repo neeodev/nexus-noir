@@ -31,4 +31,4 @@ apps/api/public/storage
 
 # Docker
 docker/data/
-.claude/
+.claude/*

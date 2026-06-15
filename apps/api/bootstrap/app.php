@@ -15,6 +15,10 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Active l'auth Sanctum en mode SPA (cookies de session) sur le groupe api.
         $middleware->statefulApi();
+
+        $middleware->alias([
+            'not.banned' => \App\Http\Middleware\EnsureUserIsNotBanned::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->shouldRenderJsonWhen(

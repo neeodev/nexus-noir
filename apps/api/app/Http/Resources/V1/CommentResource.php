@@ -43,6 +43,11 @@ class CommentResource extends JsonResource
                 'reply' => ! $deleted,
             ],
             'replies' => CommentResource::collection($this->whenLoaded('replies')),
+            'story' => $this->whenLoaded('story', fn () => [
+                'id'    => $this->story->id,
+                'title' => $this->story->title,
+                'slug'  => $this->story->slug,
+            ]),
         ];
     }
 }

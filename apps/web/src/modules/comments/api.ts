@@ -12,6 +12,12 @@ export type Comment = {
   createdAt: string | null;
   can: { delete: boolean; moderate: boolean; reply: boolean };
   replies: Comment[];
+  story?: { id: number; title: string; slug: string };
+};
+
+export type CommentPage = {
+  data: Comment[];
+  meta: { current_page: number; last_page: number; total: number; per_page: number };
 };
 
 type Wrapped<T> = { data: T };
@@ -48,5 +54,18 @@ export const commentsApi = {
       changes,
     );
     return res.data;
+  },
+
+  async adminList(params: {
+    page?: number;
+    status?: "all" | "hidden" | "pinned" | "deleted";
+    storyId?: number;
+  }): Promise<CommentPage> {
+    const search = new URLSearchParams();
+    if (params.page && params.page > 1) search.set("page", String(params.page));
+    if (params.status && params.status !== "all") search.set("status", params.status);
+    if (params.storyId) search.set("story_id", String(params.storyId));
+    const qs = search.toString();
+    return apiGet<CommentPage>(`/admin/comments${qs ? `?${qs}` : ""}`);
   },
 };

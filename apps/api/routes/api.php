@@ -3,7 +3,10 @@
 use App\Http\Controllers\Api\V1\Admin\AdminStoryController;
 use App\Http\Controllers\Api\V1\Admin\BadgeController;
 use App\Http\Controllers\Api\V1\Admin\MediaController;
+use App\Http\Controllers\Api\V1\Admin\ModerationController;
 use App\Http\Controllers\Api\V1\Admin\StatsController;
+use App\Http\Controllers\Api\V1\Admin\UserBadgeController;
+use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -18,7 +21,7 @@ Route::prefix('v1')->group(function () {
     Route::post('/auth/register', [AuthController::class, 'register']);
     Route::post('/auth/login', [AuthController::class, 'login']);
 
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'not.banned'])->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/auth/user', [AuthController::class, 'user']);
         Route::patch('/auth/profile', [ProfileController::class, 'update']);
@@ -78,6 +81,21 @@ Route::prefix('v1')->group(function () {
         Route::post('/badges', [BadgeController::class, 'store']);
         Route::patch('/badges/{badge}', [BadgeController::class, 'update']);
         Route::delete('/badges/{badge}', [BadgeController::class, 'destroy']);
+
+        // Modération des commentaires.
+        Route::get('/comments', [ModerationController::class, 'index'])->middleware('can:comments.moderate');
+
+        // Gestion des utilisateurs.
+        Route::middleware('can:users.manage')->group(function () {
+            Route::get('/users', [UserController::class, 'index']);
+            Route::get('/users/{user}', [UserController::class, 'show']);
+            Route::patch('/users/{user}/role', [UserController::class, 'update']);
+            Route::post('/users/{user}/ban', [UserController::class, 'ban']);
+            Route::delete('/users/{user}/ban', [UserController::class, 'unban']);
+            Route::delete('/users/{user}', [UserController::class, 'destroy']);
+            Route::post('/users/{user}/badges/{badge}', [UserBadgeController::class, 'store']);
+            Route::delete('/users/{user}/badges/{badge}', [UserBadgeController::class, 'destroy']);
+        });
 
         // Preuves — upload d'images.
         Route::post('/media', [MediaController::class, 'store'])->middleware('can:stories.create');

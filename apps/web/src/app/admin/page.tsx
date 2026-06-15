@@ -24,6 +24,20 @@ export default function AdminHomePage() {
           <span className="block text-zinc-100">Marques</span>
           <span className="text-sm text-zinc-500">Gérer les badges et conditions d'attribution.</span>
         </Link>
+        <Link
+          href="/admin/moderation"
+          className="rounded-lg border border-zinc-900 bg-zinc-950/40 p-5 transition-colors hover:border-red-900/60"
+        >
+          <span className="block text-zinc-100">Modération</span>
+          <span className="text-sm text-zinc-500">Masquer, épingler ou supprimer des commentaires.</span>
+        </Link>
+        <Link
+          href="/admin/utilisateurs"
+          className="rounded-lg border border-zinc-900 bg-zinc-950/40 p-5 transition-colors hover:border-red-900/60"
+        >
+          <span className="block text-zinc-100">Utilisateurs</span>
+          <span className="text-sm text-zinc-500">Gérer les rôles, bans et marques des membres.</span>
+        </Link>
       </div>
 
       {/* Statistiques */}
