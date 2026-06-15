@@ -33,7 +33,7 @@ class AdminStoryController extends Controller
 
     public function show(Story $story): AdminStoryResource
     {
-        return new AdminStoryResource($story->load('author'));
+        return new AdminStoryResource($story->load(['author', 'universeEntries']));
     }
 
     /** Crée une nouvelle (brouillon par défaut). */
@@ -62,7 +62,11 @@ class AdminStoryController extends Controller
 
         StoryVersioning::snapshot($story, $request->user()->id, force: true);
 
-        return new AdminStoryResource($story);
+        if ($request->has('universe_entry_ids')) {
+            $story->universeEntries()->sync((array) $request->validated('universe_entry_ids'));
+        }
+
+        return new AdminStoryResource($story->load('universeEntries'));
     }
 
     public function update(UpdateStoryRequest $request, Story $story): AdminStoryResource
@@ -104,7 +108,11 @@ class AdminStoryController extends Controller
             StoryVersioning::snapshot($story, $request->user()->id);
         }
 
-        return new AdminStoryResource($story->load('author'));
+        if ($request->has('universe_entry_ids')) {
+            $story->universeEntries()->sync((array) $request->validated('universe_entry_ids'));
+        }
+
+        return new AdminStoryResource($story->load(['author', 'universeEntries']));
     }
 
     /** Met la nouvelle en ligne. */

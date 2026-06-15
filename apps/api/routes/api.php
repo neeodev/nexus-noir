@@ -8,7 +8,9 @@ use App\Http\Controllers\Api\V1\Admin\StatsController;
 use App\Http\Controllers\Api\V1\Admin\UserBadgeController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Admin\ReportsController;
+use App\Http\Controllers\Api\V1\Admin\UniverseController as AdminUniverseController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\UniverseController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReactionController;
@@ -39,6 +41,10 @@ Route::prefix('v1')->group(function () {
     // Stories (Archives) — lecture publique
     Route::get('/stories', [StoryController::class, 'index']);
     Route::get('/stories/{slug}', [StoryController::class, 'show']);
+
+    // Univers (Cartographie) — public (avec gating sur les archives cachées)
+    Route::get('/universe', [UniverseController::class, 'index']);
+    Route::get('/universe/{slug}', [UniverseController::class, 'show']);
 
     // Vues (Statistiques) — enregistrement public, déduplication par hash IP+date
     Route::post('/stories/{slug}/view', [StoryViewController::class, 'store']);
@@ -105,6 +111,13 @@ Route::prefix('v1')->group(function () {
             Route::post('/users/{user}/badges/{badge}', [UserBadgeController::class, 'store']);
             Route::delete('/users/{user}/badges/{badge}', [UserBadgeController::class, 'destroy']);
         });
+
+        // Cartographie — gestion de l'univers.
+        Route::apiResource('universe', AdminUniverseController::class)
+            ->except(['index', 'show'])
+            ->parameters(['universe' => 'universeEntry']);
+        Route::get('/universe', [AdminUniverseController::class, 'index']);
+        Route::get('/universe/{universeEntry}', [AdminUniverseController::class, 'show']);
 
         // Preuves — upload d'images.
         Route::post('/media', [MediaController::class, 'store'])->middleware('can:stories.create');

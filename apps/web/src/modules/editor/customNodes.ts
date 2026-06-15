@@ -12,8 +12,8 @@ declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     nexusBlocks: {
       setDialogue: () => ReturnType;
-      /** Définit le locuteur et sa couleur (index 0-7 dans SPEAKER_COLORS). */
-      setDialogueSpeaker: (speaker: string, colorIdx: number) => ReturnType;
+      /** Définit le locuteur, sa couleur et son slug univers optionnel. */
+      setDialogueSpeaker: (speaker: string, colorIdx: number, characterSlug?: string | null) => ReturnType;
       toggleLore: () => ReturnType;
       toggleTransmission: () => ReturnType;
       toggleViolence: () => ReturnType;
@@ -62,6 +62,12 @@ export const Dialogue = Node.create({
             ? { "data-speaker-color": String(attrs.speakerColor ?? 0) }
             : {},
       },
+      characterSlug: {
+        default: null,
+        parseHTML: (el) => el.getAttribute("data-character-slug") ?? null,
+        renderHTML: (attrs) =>
+          attrs.characterSlug ? { "data-character-slug": attrs.characterSlug } : {},
+      },
     };
   },
 
@@ -80,11 +86,12 @@ export const Dialogue = Node.create({
         ({ commands }) =>
           commands.setNode(this.name),
       setDialogueSpeaker:
-        (speaker: string, colorIdx: number) =>
+        (speaker: string, colorIdx: number, characterSlug?: string | null) =>
         ({ commands }) =>
           commands.updateAttributes(this.name, {
             speaker: speaker || null,
             speakerColor: colorIdx,
+            characterSlug: characterSlug ?? null,
           }),
     };
   },

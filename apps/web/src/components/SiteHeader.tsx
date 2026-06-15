@@ -30,6 +30,9 @@ export function SiteHeader() {
         </Link>
 
         <nav className="flex items-center gap-4 text-xs uppercase tracking-widest">
+          <Link href="/univers" className="text-zinc-500 hover:text-zinc-300">
+            Univers
+          </Link>
           {status === "loading" ? (
             <span className="text-zinc-700">…</span>
           ) : user ? (

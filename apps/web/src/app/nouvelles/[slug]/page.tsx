@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fetchStory } from "@/lib/api";
+import { fetchStory, type StoryUniverseEntry } from "@/lib/api";
 import { StoryContent } from "@/modules/editor/render";
 import { ReactionBar } from "@/modules/reactions/components/ReactionBar";
 import { CommentSection } from "@/modules/comments/components/CommentSection";
 import { StoryViewTracker } from "@/components/StoryViewTracker";
+import { TYPE_LABELS_PLURAL, type UniverseEntryType } from "@/modules/universe/api";
 
 type Params = { slug: string };
 
@@ -112,9 +113,69 @@ export default async function StoryPage({
       {/* Corps du texte */}
       <StoryContent doc={story.content} />
 
+      {/* Entrées d'univers liées */}
+      {story.universeEntries && story.universeEntries.length > 0 && (
+        <UniverseEntriesSection entries={story.universeEntries!} />
+      )}
+
       <ReactionBar slug={story.slug} />
 
       <CommentSection slug={story.slug} />
     </article>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────
+// Entrées d'univers liées à la nouvelle
+// ──────────────────────────────────────────────────────────────
+
+const TYPE_ORDER: UniverseEntryType[] = ["character", "place", "faction", "event", "concept"];
+
+const TYPE_COLORS: Record<UniverseEntryType, string> = {
+  character: "border-red-900/40 text-red-400",
+  place:     "border-blue-900/40 text-blue-400",
+  faction:   "border-amber-900/40 text-amber-400",
+  event:     "border-purple-900/40 text-purple-400",
+  concept:   "border-zinc-700 text-zinc-500",
+};
+
+function UniverseEntriesSection({ entries }: { entries: StoryUniverseEntry[] }) {
+  const byType = TYPE_ORDER.reduce<Record<string, StoryUniverseEntry[]>>((acc, t) => {
+    acc[t] = entries.filter((e) => e.type === t);
+    return acc;
+  }, {});
+
+  return (
+    <div className="my-12 border-t border-zinc-900 pt-10">
+      <p className="mb-5 text-xs uppercase tracking-widest text-zinc-600">Dans cette nouvelle</p>
+      <div className="space-y-5">
+        {TYPE_ORDER.map((type) => {
+          const group = byType[type];
+          if (!group?.length) return null;
+          return (
+            <div key={type}>
+              <p className="mb-2 text-[10px] uppercase tracking-widest text-zinc-700">
+                {TYPE_LABELS_PLURAL[type]}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {group.map((e) => (
+                  <Link
+                    key={e.id}
+                    href={`/univers/${e.slug}`}
+                    className={`flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm transition-colors hover:bg-zinc-900 ${TYPE_COLORS[type as UniverseEntryType]}`}
+                  >
+                    {e.coverImage && (
+                      <img src={e.coverImage} alt={e.name}
+                        className="h-5 w-5 shrink-0 rounded-full object-cover opacity-80" />
+                    )}
+                    {e.name}
+                  </Link>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
   );
 }

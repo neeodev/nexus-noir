@@ -10,7 +10,9 @@ import {
   type AdminStory,
   type StoryInput,
   type StoryVersion,
+  type StoryUniverseEntry,
 } from "../api";
+import { adminUniverseApi, TYPE_LABELS_PLURAL, type UniverseEntryType } from "@/modules/universe/api";
 import { mediaApi } from "../media";
 import { StoryEditor } from "./StoryEditor";
 import { ConfirmModal } from "@/components/Modal";
@@ -65,6 +67,9 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
   const [showVersions, setShowVersions] = useState(false);
   const [versions, setVersions] = useState<StoryVersion[] | null>(null);
 
+  // Univers lié
+  const [universeEntryIds, setUniverseEntryIds] = useState<number[]>([]);
+
   // Modale de confirmation (remplace window.confirm)
   const [confirmState, setConfirmState] = useState<ConfirmState>(null);
 
@@ -101,6 +106,7 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
         setCoverImage(s.coverImage);
         setContent(s.content);
         setInitialContent(s.content);
+        setUniverseEntryIds((s.universeEntries ?? []).map((e) => e.id));
         setLoading(false);
       })
       .catch(() => {
@@ -129,8 +135,9 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
         .split(",")
         .map((t) => t.trim())
         .filter(Boolean),
+      universe_entry_ids: universeEntryIds,
     }),
-    [title, summaryShort, coverImage, visibility, content, tags, warnings],
+    [title, summaryShort, coverImage, visibility, content, tags, warnings, universeEntryIds],
   );
 
   const save = useCallback(async () => {
@@ -465,6 +472,11 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
                 {story.slug && <> · /{story.slug}</>}
               </p>
             )}
+
+            <UniversePanel
+              selectedIds={universeEntryIds}
+              onChange={(ids) => { setUniverseEntryIds(ids); markDirty(); }}
+            />
           </aside>
         </div>
       </div>
@@ -574,6 +586,105 @@ function CoverField({
         className="hidden"
         onChange={handleFile}
       />
+    </div>
+  );
+}
+
+// ────────────────────────────────────────────────────────────
+// Panneau Univers
+// ────────────────────────────────────────────────────────────
+
+const UNIVERSE_TYPES: UniverseEntryType[] = ["character", "place", "faction", "event", "concept"];
+
+function UniversePanel({
+  selectedIds,
+  onChange,
+}: {
+  selectedIds: number[];
+  onChange: (ids: number[]) => void;
+}) {
+  const [entries, setEntries] = useState<{ id: number; type: string; typeLabel: string; name: string; slug: string }[]>([]);
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  async function load() {
+    if (loaded) return;
+    setLoading(true);
+    try {
+      const res = await adminUniverseApi.list();
+      setEntries(res.data.map((e) => ({ id: e.id, type: e.type, typeLabel: e.typeLabel, name: e.name, slug: e.slug })));
+      setLoaded(true);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function toggle() {
+    if (!open) load();
+    setOpen((v) => !v);
+  }
+
+  function toggleEntry(id: number) {
+    onChange(
+      selectedIds.includes(id)
+        ? selectedIds.filter((x) => x !== id)
+        : [...selectedIds, id],
+    );
+  }
+
+  const selectedCount = selectedIds.length;
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={toggle}
+        className="flex w-full items-center justify-between text-xs uppercase tracking-widest text-zinc-500 hover:text-zinc-300"
+      >
+        <span>Univers lié</span>
+        <span className="text-zinc-600">{selectedCount > 0 ? `${selectedCount} lié${selectedCount > 1 ? "s" : ""}` : open ? "▲" : "▼"}</span>
+      </button>
+
+      {open && (
+        <div className="mt-3">
+          {loading && <p className="text-xs text-zinc-600">Chargement…</p>}
+          {!loading && entries.length === 0 && (
+            <p className="text-xs text-zinc-600">
+              Aucune entrée dans l'univers.
+            </p>
+          )}
+          {!loading && UNIVERSE_TYPES.map((type) => {
+            const group = entries.filter((e) => e.type === type);
+            if (!group.length) return null;
+            return (
+              <div key={type} className="mb-3">
+                <p className="mb-1.5 text-[10px] uppercase tracking-wider text-zinc-600">
+                  {TYPE_LABELS_PLURAL[type]}
+                </p>
+                <div className="space-y-1">
+                  {group.map((e) => {
+                    const checked = selectedIds.includes(e.id);
+                    return (
+                      <label key={e.id} className="flex cursor-pointer items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleEntry(e.id)}
+                          className="rounded border-zinc-700 bg-zinc-900"
+                        />
+                        <span className={`text-xs ${checked ? "text-zinc-200" : "text-zinc-500"}`}>
+                          {e.name}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

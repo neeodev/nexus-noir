@@ -37,6 +37,8 @@ class UpdateStoryRequest extends FormRequest
             'tags.*' => ['string', 'max:50'],
             'contentWarnings' => ['nullable', 'array'],
             'contentWarnings.*' => ['string', 'max:100'],
+            'universe_entry_ids' => ['nullable', 'array'],
+            'universe_entry_ids.*' => ['integer', 'exists:universe_entries,id'],
         ];
     }
 }

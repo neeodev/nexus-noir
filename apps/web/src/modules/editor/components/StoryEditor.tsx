@@ -51,7 +51,7 @@ export function StoryEditor({
   );
 }
 
-type SpeakerModalState = { speaker: string; colorIdx: number } | null;
+type SpeakerModalState = { speaker: string; colorIdx: number; characterSlug?: string | null } | null;
 
 function Toolbar({ editor }: { editor: Editor }) {
   const s = useEditorState({
@@ -81,15 +81,16 @@ function Toolbar({ editor }: { editor: Editor }) {
     setSpeakerModal({
       speaker: (attrs.speaker as string | null) ?? "",
       colorIdx: (attrs.speakerColor as number | undefined) ?? 0,
+      characterSlug: (attrs.characterSlug as string | null) ?? null,
     });
   }
 
-  function handleSpeakerConfirm(speaker: string, colorIdx: number) {
+  function handleSpeakerConfirm(speaker: string, colorIdx: number, characterSlug: string | null) {
     editor
       .chain()
       .focus()
       .setDialogue()
-      .setDialogueSpeaker(speaker, colorIdx)
+      .setDialogueSpeaker(speaker, colorIdx, characterSlug)
       .run();
     setSpeakerModal(null);
   }

@@ -41,11 +41,21 @@ export type StoryListItem = {
   publishedAt: string | null;
 };
 
+export type StoryUniverseEntry = {
+  id: number;
+  type: string;
+  typeLabel: string;
+  name: string;
+  slug: string;
+  coverImage: string | null;
+};
+
 export type Story = StoryListItem & {
   summaryLong: string | null;
   version: number;
   content: StoryDocument;
   author?: { name: string | null };
+  universeEntries?: StoryUniverseEntry[];
 };
 
 type Paginated<T> = { data: T[] };

@@ -45,6 +45,13 @@ export default function AdminHomePage() {
           <span className="block text-zinc-100">Utilisateurs</span>
           <span className="text-sm text-zinc-500">Gérer les rôles, bans et marques des membres.</span>
         </Link>
+        <Link
+          href="/admin/univers"
+          className="rounded-lg border border-zinc-900 bg-zinc-950/40 p-5 transition-colors hover:border-red-900/60"
+        >
+          <span className="block text-zinc-100">Cartographie</span>
+          <span className="text-sm text-zinc-500">Gérer les personnages, lieux, factions et événements.</span>
+        </Link>
       </div>
 
       {/* Statistiques */}

@@ -1,6 +1,15 @@
 import { apiGet, apiSend } from "@/lib/http";
 import type { StoryDocument } from "@/lib/api";
 
+export type StoryUniverseEntry = {
+  id: number;
+  type: string;
+  typeLabel: string;
+  name: string;
+  slug: string;
+  coverImage: string | null;
+};
+
 export type AdminStory = {
   id: number;
   title: string;
@@ -21,6 +30,7 @@ export type AdminStory = {
   publishedAt: string | null;
   createdAt: string | null;
   updatedAt: string | null;
+  universeEntries?: StoryUniverseEntry[];
 };
 
 /** Champs modifiables envoyés à l'API (partiels lors d'un autosave). */
@@ -35,6 +45,7 @@ export type StoryInput = Partial<{
   content: StoryDocument;
   tags: string[];
   contentWarnings: string[];
+  universe_entry_ids: number[];
 }>;
 
 export type StoryVersion = {

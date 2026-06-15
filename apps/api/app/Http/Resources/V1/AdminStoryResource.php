@@ -31,6 +31,16 @@ class AdminStoryResource extends JsonResource
             'wordCount' => $this->word_count,
             'version' => $this->version,
             'author' => $this->whenLoaded('author', fn () => ['name' => $this->author?->name]),
+            'universeEntries' => $this->whenLoaded('universeEntries', fn () =>
+                $this->universeEntries->map(fn ($e) => [
+                    'id'        => $e->id,
+                    'type'      => $e->type->value,
+                    'typeLabel' => $e->type->label(),
+                    'name'      => $e->name,
+                    'slug'      => $e->slug,
+                    'coverImage' => $e->cover_image,
+                ])
+            ),
             'publishedAt' => $this->published_at?->toIso8601String(),
             'createdAt' => $this->created_at?->toIso8601String(),
             'updatedAt' => $this->updated_at?->toIso8601String(),

@@ -77,6 +77,11 @@ class Story extends Model
         return $this->hasMany(StoryView::class);
     }
 
+    public function universeEntries(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(UniverseEntry::class, 'story_universe_entry');
+    }
+
     /** Nouvelles publiees et accessibles publiquement. */
     public function scopePublished(Builder $query): Builder
     {
