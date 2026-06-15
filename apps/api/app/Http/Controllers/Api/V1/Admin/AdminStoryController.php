@@ -25,8 +25,9 @@ class AdminStoryController extends Controller
     {
         $stories = Story::query()
             ->when($request->filled('status'), fn ($q) => $q->where('status', $request->string('status')))
+            ->when($request->filled('search'), fn ($q) => $q->whereRaw('LOWER(title) LIKE ?', ['%' . strtolower($request->string('search')) . '%']))
             ->latest('updated_at')
-            ->paginate(20);
+            ->paginate($request->integer('per_page', 20));
 
         return AdminStoryResource::collection($stories);
     }

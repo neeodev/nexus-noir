@@ -15,7 +15,7 @@ import {
 import { adminUniverseApi, TYPE_LABELS_PLURAL, type UniverseEntryType } from "@/modules/universe/api";
 import { mediaApi } from "../media";
 import { StoryEditor } from "./StoryEditor";
-import { ConfirmModal } from "@/components/Modal";
+import { useDialog } from "@/hooks/useDialog";
 
 const STATUS_OPTIONS = [
   { value: "draft", label: "Brouillon" },
@@ -35,11 +35,6 @@ const VISIBILITY_OPTIONS = [
 ];
 
 type SaveState = "idle" | "dirty" | "saving" | "saved" | "error";
-
-type ConfirmState = {
-  message: string;
-  resolve: (ok: boolean) => void;
-} | null;
 
 export function StoryEditorView({ storyId }: { storyId?: number }) {
   const [loading, setLoading] = useState(Boolean(storyId));
@@ -70,24 +65,7 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
   // Univers lié
   const [universeEntryIds, setUniverseEntryIds] = useState<number[]>([]);
 
-  // Modale de confirmation (remplace window.confirm)
-  const [confirmState, setConfirmState] = useState<ConfirmState>(null);
-
-  const confirm = useCallback((message: string): Promise<boolean> => {
-    return new Promise((resolve) => {
-      setConfirmState({ message, resolve });
-    });
-  }, []);
-
-  const handleConfirmOk = useCallback(() => {
-    confirmState?.resolve(true);
-    setConfirmState(null);
-  }, [confirmState]);
-
-  const handleConfirmCancel = useCallback(() => {
-    confirmState?.resolve(false);
-    setConfirmState(null);
-  }, [confirmState]);
+  const { confirm, dialogNode } = useDialog();
 
   useEffect(() => {
     if (!storyId) return;
@@ -240,16 +218,7 @@ export function StoryEditorView({ storyId }: { storyId?: number }) {
 
   return (
     <>
-      {confirmState && (
-        <ConfirmModal
-          title="Confirmation"
-          message={confirmState.message}
-          danger
-          confirmLabel="Restaurer"
-          onConfirm={handleConfirmOk}
-          onCancel={handleConfirmCancel}
-        />
-      )}
+      {dialogNode}
 
       <div>
         <div className="mb-4 flex items-center justify-between gap-3">

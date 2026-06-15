@@ -8,8 +8,12 @@ use App\Http\Controllers\Api\V1\Admin\StatsController;
 use App\Http\Controllers\Api\V1\Admin\UserBadgeController;
 use App\Http\Controllers\Api\V1\Admin\UserController;
 use App\Http\Controllers\Api\V1\Admin\ReportsController;
+use App\Http\Controllers\Api\V1\Admin\SeriesController as AdminSeriesController;
 use App\Http\Controllers\Api\V1\Admin\UniverseController as AdminUniverseController;
+use App\Http\Controllers\Api\V1\BookmarkController;
+use App\Http\Controllers\Api\V1\SearchController;
 use App\Http\Controllers\Api\V1\AuthController;
+use App\Http\Controllers\Api\V1\SeriesController;
 use App\Http\Controllers\Api\V1\UniverseController;
 use App\Http\Controllers\Api\V1\CommentController;
 use App\Http\Controllers\Api\V1\ProfileController;
@@ -36,11 +40,23 @@ Route::prefix('v1')->group(function () {
             return \App\Http\Resources\V1\BadgeResource::collection($user->badges);
         });
         Route::post('/auth/badges/redeem', RedeemBadgeController::class);
+
+        // Marque-pages
+        Route::get('/bookmarks', [BookmarkController::class, 'index']);
+        Route::get('/bookmarks/slugs', [BookmarkController::class, 'slugs']);
+        Route::post('/stories/{slug}/bookmark', [BookmarkController::class, 'toggle']);
     });
+
+    // Recherche globale — publique
+    Route::get('/search', SearchController::class);
 
     // Stories (Archives) — lecture publique
     Route::get('/stories', [StoryController::class, 'index']);
     Route::get('/stories/{slug}', [StoryController::class, 'show']);
+
+    // Séries (Arcs narratifs) — lecture publique
+    Route::get('/series', [SeriesController::class, 'index']);
+    Route::get('/series/{series:slug}', [SeriesController::class, 'show']);
 
     // Univers (Cartographie) — public (avec gating sur les archives cachées)
     Route::get('/universe', [UniverseController::class, 'index']);
@@ -111,6 +127,11 @@ Route::prefix('v1')->group(function () {
             Route::post('/users/{user}/badges/{badge}', [UserBadgeController::class, 'store']);
             Route::delete('/users/{user}/badges/{badge}', [UserBadgeController::class, 'destroy']);
         });
+
+        // Arcs narratifs — gestion des séries.
+        Route::apiResource('series', AdminSeriesController::class)->except(['index', 'show']);
+        Route::get('/series', [AdminSeriesController::class, 'index']);
+        Route::get('/series/{series}', [AdminSeriesController::class, 'show']);
 
         // Cartographie — gestion de l'univers.
         Route::apiResource('universe', AdminUniverseController::class)

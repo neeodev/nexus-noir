@@ -324,6 +324,17 @@ export default function ComptePage() {
           </div>
         </section>
 
+        {/* Favoris */}
+        <section>
+          <SectionLabel>Favoris</SectionLabel>
+          <div className="rounded-lg border border-zinc-900 bg-zinc-950/40 p-4">
+            <Link href="/compte/favoris"
+              className="text-sm text-zinc-400 hover:text-red-400 transition-colors">
+              Voir mes nouvelles favorites →
+            </Link>
+          </div>
+        </section>
+
         {/* Marques */}
         <section>
           <SectionLabel>Marques</SectionLabel>

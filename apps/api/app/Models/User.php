@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use App\Models\Story;
 use App\Models\UserBadge;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -75,5 +76,11 @@ class User extends Authenticatable
             ->using(UserBadge::class)
             ->withPivot('awarded_at')
             ->orderBy('sort_order');
+    }
+
+    public function bookmarkedStories(): BelongsToMany
+    {
+        return $this->belongsToMany(Story::class, 'bookmarks')
+            ->withTimestamps();
     }
 }

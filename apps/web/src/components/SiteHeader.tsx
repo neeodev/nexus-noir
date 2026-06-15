@@ -1,9 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useAuthContext } from "@/modules/auth/store";
 import { useHasPermission } from "@/modules/auth/hooks";
+import { SearchBar } from "./SearchBar";
+
+function NavLink({ href, children }: { href: string; children: React.ReactNode }) {
+  const pathname = usePathname();
+  const active = pathname === href || pathname.startsWith(href + "/");
+  return (
+    <Link
+      href={href}
+      className={`relative pb-0.5 transition-colors ${
+        active
+          ? "text-nn-text after:absolute after:inset-x-0 after:-bottom-px after:h-px after:bg-nn-red"
+          : "text-nn-muted hover:text-nn-text"
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
 
 export function SiteHeader() {
   const router = useRouter();
@@ -17,54 +35,67 @@ export function SiteHeader() {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-zinc-900 bg-[#08080a]/85 backdrop-blur">
-      <div className="h-px w-full bg-gradient-to-r from-transparent via-red-900/70 to-transparent" />
-      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4 sm:px-6">
-        <Link href="/" className="group flex items-baseline gap-2">
-          <span className="font-mono text-sm uppercase tracking-[0.3em] text-zinc-200 group-hover:text-red-400">
-            Nexus Noir
+    <header className="sticky top-0 z-20 bg-nn-black/95 backdrop-blur-md">
+      {/* Ligne rouge — identité de la ville */}
+      <div className="h-[2px] w-full bg-gradient-to-r from-nn-red-dark via-nn-red to-nn-red-dark opacity-80" />
+
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3 sm:px-6">
+
+        {/* Logo */}
+        <Link href="/" className="group flex items-center gap-3">
+          <span className="font-title text-2xl tracking-[0.18em] text-nn-text transition-colors group-hover:text-nn-red">
+            NEXUS NOIR
           </span>
-          <span className="hidden text-[0.65rem] uppercase tracking-widest text-zinc-600 sm:inline">
-            Archives
+          <span className="hidden items-center gap-2.5 sm:flex">
+            <span className="h-3 w-px bg-nn-border" />
+            <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-nn-border group-hover:text-nn-muted transition-colors">
+              Archives
+            </span>
           </span>
         </Link>
 
-        <nav className="flex items-center gap-4 text-xs uppercase tracking-widest">
-          <Link href="/univers" className="text-zinc-500 hover:text-zinc-300">
-            Univers
-          </Link>
+        {/* Navigation */}
+        <nav className="flex items-center gap-5 font-mono text-[10px] uppercase tracking-widest">
+          <SearchBar />
+          <NavLink href="/series">Séries</NavLink>
+          <NavLink href="/univers">Univers</NavLink>
+
           {status === "loading" ? (
-            <span className="text-zinc-700">…</span>
+            <span className="text-nn-border">…</span>
           ) : user ? (
             <>
+              <span className="text-nn-border">·</span>
               {canAccessAdmin && (
-                <Link href="/admin" className="text-red-400 hover:text-red-300">
-                  Bureau Noir
-                </Link>
+                <NavLink href="/admin">
+                  <span className="text-nn-red-dark hover:text-nn-red transition-colors">Bureau Noir</span>
+                </NavLink>
               )}
-              <Link href="/compte" className="text-zinc-400 hover:text-red-500" title={user.roleLabel}>
-                {user.name}
-              </Link>
+              <NavLink href="/compte">{user.name}</NavLink>
               <button
                 onClick={handleLogout}
-                className="text-zinc-500 hover:text-red-500"
+                className="text-nn-border hover:text-nn-muted transition-colors"
                 type="button"
               >
-                Déconnexion
+                Sortir
               </button>
             </>
           ) : (
             <>
-              <Link href="/connexion" className="text-zinc-400 hover:text-red-500">
+              <span className="text-nn-border">·</span>
+              <Link href="/connexion" className="text-nn-muted hover:text-nn-text transition-colors">
                 Connexion
               </Link>
-              <Link href="/inscription" className="text-zinc-400 hover:text-red-500">
+              <Link href="/inscription" className="text-nn-muted hover:text-nn-red transition-colors">
                 Inscription
               </Link>
             </>
           )}
         </nav>
+
       </div>
+
+      {/* Ligne de séparation basse */}
+      <div className="h-px w-full bg-nn-border/40" />
     </header>
   );
 }

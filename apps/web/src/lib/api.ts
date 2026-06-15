@@ -50,12 +50,23 @@ export type StoryUniverseEntry = {
   coverImage: string | null;
 };
 
+export type SeriesContext = {
+  id: number;
+  title: string;
+  slug: string;
+  position: number;
+  total: number;
+  prev: { title: string; slug: string } | null;
+  next: { title: string; slug: string } | null;
+};
+
 export type Story = StoryListItem & {
   summaryLong: string | null;
   version: number;
   content: StoryDocument;
   author?: { name: string | null };
   universeEntries?: StoryUniverseEntry[];
+  seriesContext?: SeriesContext;
 };
 
 type Paginated<T> = { data: T[] };

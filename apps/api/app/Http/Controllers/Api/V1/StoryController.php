@@ -28,7 +28,7 @@ class StoryController extends Controller
     {
         $story = Story::query()
             ->published()
-            ->with(['author', 'universeEntries'])
+            ->with(['author', 'universeEntries', 'series'])
             ->withCount('views')
             ->where('slug', $slug)
             ->firstOrFail();

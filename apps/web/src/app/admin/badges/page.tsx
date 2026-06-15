@@ -5,6 +5,8 @@ import { AdminGuard } from "@/components/AdminGuard";
 import { apiGet, apiSend } from "@/lib/http";
 import type { Badge } from "@/modules/auth/api";
 import { BadgeIcon } from "@/components/BadgeIcon";
+import { AdminIconBtn, IcoEdit, IcoTrash } from "@/components/AdminIcons";
+import { useDialog } from "@/hooks/useDialog";
 
 type BadgeForm = {
   slug: string;
@@ -70,6 +72,7 @@ export default function AdminBadgesPage() {
   const [form, setForm] = useState<BadgeForm>(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { confirm, dialogNode } = useDialog();
 
   async function loadBadges() {
     setLoading(true);
@@ -160,7 +163,7 @@ export default function AdminBadgesPage() {
   }
 
   async function handleDelete(badge: Badge) {
-    if (!window.confirm(`Supprimer la marque "${badge.name}" ?`)) return;
+    if (!await confirm(`Supprimer la marque « ${badge.name} » ?`, { title: "Supprimer la marque", danger: true, confirmLabel: "Supprimer" })) return;
     try {
       await apiSend(`/admin/badges/${badge.id}`, "DELETE");
       await loadBadges();
@@ -348,6 +351,7 @@ export default function AdminBadgesPage() {
         </form>
       )}
 
+      {dialogNode}
       {loading ? (
         <p className="text-sm text-zinc-700">Chargement…</p>
       ) : badges.length === 0 ? (
@@ -387,19 +391,9 @@ export default function AdminBadgesPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => openEdit(badge)}
-                        className="text-xs text-zinc-400 hover:text-zinc-100"
-                      >
-                        Modifier
-                      </button>
-                      <button
-                        onClick={() => handleDelete(badge)}
-                        className="text-xs text-red-800 hover:text-red-500"
-                      >
-                        Supprimer
-                      </button>
+                    <div className="flex items-center justify-end gap-1">
+                      <AdminIconBtn icon={<IcoEdit />}  title="Modifier"   onClick={() => openEdit(badge)} />
+                      <AdminIconBtn icon={<IcoTrash />} title="Supprimer"  variant="red" onClick={() => handleDelete(badge)} />
                     </div>
                   </td>
                 </tr>

@@ -60,8 +60,9 @@ export type StoryVersion = {
 type Wrapped<T> = { data: T };
 
 export const adminStoriesApi = {
-  async list(): Promise<AdminStory[]> {
-    const res = await apiGet<Wrapped<AdminStory[]>>("/admin/stories");
+  async list(qs?: string): Promise<AdminStory[]> {
+    const path = qs ? `/admin/stories?${qs}` : "/admin/stories";
+    const res = await apiGet<Wrapped<AdminStory[]>>(path);
     return res.data;
   },
 
@@ -87,6 +88,11 @@ export const adminStoriesApi = {
 
   async unpublish(id: number): Promise<AdminStory> {
     const res = await apiSend<Wrapped<AdminStory>>(`/admin/stories/${id}/unpublish`, "POST");
+    return res.data;
+  },
+
+  async archive(id: number): Promise<AdminStory> {
+    const res = await apiSend<Wrapped<AdminStory>>(`/admin/stories/${id}`, "PATCH", { status: "archived" });
     return res.data;
   },
 

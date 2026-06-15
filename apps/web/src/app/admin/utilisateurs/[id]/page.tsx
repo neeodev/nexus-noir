@@ -8,6 +8,7 @@ import { BadgeIcon } from "@/components/BadgeIcon";
 import { adminUsersApi, type AdminUser } from "@/modules/admin/usersApi";
 import type { Badge } from "@/modules/auth/api";
 import { apiGet } from "@/lib/http";
+import { useDialog } from "@/hooks/useDialog";
 
 const ASSIGNABLE_ROLES = ["reader", "moderator", "editor", "admin"] as const;
 const ROLE_LABELS: Record<string, string> = {
@@ -35,6 +36,7 @@ function UserDetailContent() {
   const [banReason, setBanReason] = useState("");
   const [showBanForm, setShowBanForm] = useState(false);
   const [busy, setBusy] = useState(false);
+  const { confirm, dialogNode } = useDialog();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -89,7 +91,7 @@ function UserDetailContent() {
 
   async function handleDelete() {
     if (!user || busy) return;
-    if (!confirm(`Supprimer définitivement le compte de ${user.name} ? Cette action est irréversible.`)) return;
+    if (!await confirm(`Supprimer définitivement le compte de ${user.name} ? Cette action est irréversible.`, { title: "Supprimer le compte", danger: true, confirmLabel: "Supprimer" })) return;
     setBusy(true);
     try {
       await adminUsersApi.delete(user.id);
@@ -112,7 +114,7 @@ function UserDetailContent() {
 
   async function handleRevokeBadge(badge: Badge) {
     if (!user || busy) return;
-    if (!confirm(`Révoquer la marque « ${badge.name} » ?`)) return;
+    if (!await confirm(`Révoquer la marque « ${badge.name} » ?`, { title: "Révoquer la marque", danger: true, confirmLabel: "Révoquer" })) return;
     setBusy(true);
     try {
       await adminUsersApi.revokeBadge(user.id, badge.id);
@@ -124,6 +126,7 @@ function UserDetailContent() {
 
   if (loading) return <div className="py-16 text-center text-sm text-zinc-600">Chargement…</div>;
   if (!user) return <div className="py-16 text-center text-sm text-zinc-600">Utilisateur introuvable.</div>;
+  // dialogNode rendu dans le return plus bas
 
   const awardedIds = new Set(user.badges?.map((b) => b.id) ?? []);
   const availableBadges = allBadges.filter((b) => !awardedIds.has(b.id));
@@ -137,6 +140,7 @@ function UserDetailContent() {
 
   return (
     <div className="max-w-2xl">
+      {dialogNode}
       {/* Breadcrumb */}
       <div className="mb-6 flex items-center gap-3 text-sm">
         <Link href="/admin" className="text-zinc-600 hover:text-zinc-400">Bureau Noir</Link>

@@ -10,11 +10,11 @@ export const metadata: Metadata = {
 const TYPE_ORDER: UniverseEntryType[] = ["character", "place", "faction", "event", "concept"];
 
 const TYPE_COLORS: Record<UniverseEntryType, string> = {
-  character: "border-red-900/50 text-red-400",
-  place:     "border-blue-900/50 text-blue-400",
-  faction:   "border-amber-900/50 text-amber-400",
-  event:     "border-purple-900/50 text-purple-400",
-  concept:   "border-zinc-700 text-zinc-500",
+  character: "border-nn-red-dark/60 text-nn-text",
+  place:     "border-nn-yellow/50 text-nn-yellow",
+  faction:   "border-nn-purple/50 text-nn-purple",
+  event:     "border-nn-cyan/40 text-nn-cyan",
+  concept:   "border-nn-border text-nn-muted",
 };
 
 export default async function UniversPage() {
@@ -30,10 +30,13 @@ export default async function UniversPage() {
 
   return (
     <div className="mx-auto max-w-4xl">
-      <div className="mb-12 border-l-2 border-red-900/50 pl-5">
-        <h1 className="text-3xl font-bold tracking-tight text-zinc-100">Cartographie</h1>
-        <p className="mt-2 text-sm text-zinc-500">
-          Archives de l'univers Nexus Noir — personnages, lieux, factions et événements.
+      <div className="mb-12 border-l-2 border-nn-red-dark pl-6">
+        <p className="mb-2 font-mono text-[9px] uppercase tracking-[0.3em] text-nn-red-dark">
+          — Base de données · Accès classifié —
+        </p>
+        <h1 className="font-heading text-4xl font-bold text-nn-text">Cartographie</h1>
+        <p className="mt-3 max-w-md text-sm leading-relaxed text-nn-muted">
+          Personnages, lieux, factions et événements de l&apos;univers Nexus Noir.
         </p>
       </div>
 
@@ -65,7 +68,7 @@ function EntryCard({ entry, colorClass }: { entry: UniverseEntry; colorClass: st
   return (
     <Link
       href={`/univers/${entry.slug}`}
-      className="group rounded-lg border border-zinc-900 bg-zinc-950/40 p-4 transition-colors hover:border-red-900/40"
+      className="group rounded-sm border border-nn-border/50 bg-nn-surface/40 p-4 transition-colors hover:border-nn-red-dark/60 hover:bg-nn-surface"
     >
       {entry.coverImage && (
         <div className="mb-3 h-32 w-full overflow-hidden rounded-md bg-zinc-900">
@@ -74,13 +77,13 @@ function EntryCard({ entry, colorClass }: { entry: UniverseEntry; colorClass: st
         </div>
       )}
       <div className="flex items-start justify-between gap-2">
-        <span className="font-medium text-zinc-100">{entry.name}</span>
-        <span className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] uppercase tracking-wider ${colorClass}`}>
+        <span className="font-heading font-semibold text-nn-text group-hover:text-white transition-colors">{entry.name}</span>
+        <span className={`shrink-0 rounded-sm border px-1.5 py-0.5 font-mono text-[9px] uppercase tracking-wider ${colorClass}`}>
           {entry.typeLabel}
         </span>
       </div>
       {entry.summary && (
-        <p className="mt-1.5 line-clamp-2 text-xs text-zinc-500">{entry.summary}</p>
+        <p className="mt-1.5 line-clamp-2 text-xs text-nn-muted">{entry.summary}</p>
       )}
     </Link>
   );

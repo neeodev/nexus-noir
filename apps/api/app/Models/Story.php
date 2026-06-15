@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Story extends Model
@@ -80,6 +81,12 @@ class Story extends Model
     public function universeEntries(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
     {
         return $this->belongsToMany(UniverseEntry::class, 'story_universe_entry');
+    }
+
+    public function series(): BelongsToMany
+    {
+        return $this->belongsToMany(Series::class, 'series_story')
+            ->withPivot('position');
     }
 
     /** Nouvelles publiees et accessibles publiquement. */

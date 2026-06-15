@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { fetchStory, type StoryUniverseEntry } from "@/lib/api";
+import { fetchStory, type StoryUniverseEntry, type SeriesContext } from "@/lib/api";
 import { StoryContent } from "@/modules/editor/render";
 import { ReactionBar } from "@/modules/reactions/components/ReactionBar";
 import { CommentSection } from "@/modules/comments/components/CommentSection";
 import { StoryViewTracker } from "@/components/StoryViewTracker";
 import { TYPE_LABELS_PLURAL, type UniverseEntryType } from "@/modules/universe/api";
+import { BookmarkButton } from "@/modules/bookmarks/BookmarkButton";
 
 type Params = { slug: string };
 
@@ -82,7 +83,7 @@ export default async function StoryPage({
       )}
 
       {/* Titre */}
-      <h1 className="mb-4 text-4xl font-bold leading-tight tracking-tight text-zinc-50 sm:text-5xl">
+      <h1 className="mb-4 font-heading text-4xl font-bold leading-tight text-zinc-50 sm:text-5xl">
         {story.title}
       </h1>
 
@@ -94,7 +95,7 @@ export default async function StoryPage({
       )}
 
       {/* Méta */}
-      <div className="mb-10 flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-zinc-900 pb-8 text-xs text-zinc-600">
+      <div className="mb-10 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-zinc-900 pb-8 text-xs text-zinc-600">
         {story.author?.name && (
           <span className="font-medium text-zinc-500">{story.author.name}</span>
         )}
@@ -106,12 +107,21 @@ export default async function StoryPage({
         {story.tags.map((tag) => (
           <span key={tag}>#{tag}</span>
         ))}
+        <div className="ml-auto">
+          <BookmarkButton slug={story.slug} />
+        </div>
       </div>
+
+      {/* Bannière de série */}
+      {story.seriesContext && <SeriesBanner ctx={story.seriesContext} />}
 
       <StoryViewTracker slug={story.slug} />
 
       {/* Corps du texte */}
       <StoryContent doc={story.content} />
+
+      {/* Navigation série après le texte */}
+      {story.seriesContext && <SeriesNav ctx={story.seriesContext} />}
 
       {/* Entrées d'univers liées */}
       {story.universeEntries && story.universeEntries.length > 0 && (
@@ -122,6 +132,49 @@ export default async function StoryPage({
 
       <CommentSection slug={story.slug} />
     </article>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────
+// Navigation série
+// ──────────────────────────────────────────────────────────────
+
+function SeriesBanner({ ctx }: { ctx: SeriesContext }) {
+  return (
+    <div className="mb-6 flex items-center gap-3 rounded-lg border border-zinc-800 bg-zinc-900/50 px-4 py-2.5">
+      <Link href={`/series/${ctx.slug}`} className="text-xs text-zinc-500 hover:text-zinc-300 line-clamp-1 flex-1">
+        Série · <span className="text-zinc-400">{ctx.title}</span>
+      </Link>
+      <span className="shrink-0 font-mono text-xs text-zinc-700">
+        {ctx.position} / {ctx.total}
+      </span>
+    </div>
+  );
+}
+
+function SeriesNav({ ctx }: { ctx: SeriesContext }) {
+  return (
+    <div className="my-12 grid grid-cols-2 gap-4 border-t border-zinc-900 pt-10">
+      {ctx.prev ? (
+        <Link
+          href={`/nouvelles/${ctx.prev.slug}`}
+          className="group flex flex-col gap-1 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4 transition-colors hover:border-zinc-700"
+        >
+          <span className="text-[10px] uppercase tracking-widest text-zinc-600">← Épisode précédent</span>
+          <span className="text-sm text-zinc-300 group-hover:text-white line-clamp-2">{ctx.prev.title}</span>
+        </Link>
+      ) : <div />}
+
+      {ctx.next ? (
+        <Link
+          href={`/nouvelles/${ctx.next.slug}`}
+          className="group flex flex-col items-end gap-1 rounded-lg border border-zinc-800 bg-zinc-900/30 p-4 text-right transition-colors hover:border-zinc-700"
+        >
+          <span className="text-[10px] uppercase tracking-widest text-zinc-600">Épisode suivant →</span>
+          <span className="text-sm text-zinc-300 group-hover:text-white line-clamp-2">{ctx.next.title}</span>
+        </Link>
+      ) : <div />}
+    </div>
   );
 }
 

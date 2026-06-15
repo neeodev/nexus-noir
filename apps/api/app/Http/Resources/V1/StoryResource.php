@@ -40,6 +40,31 @@ class StoryResource extends JsonResource
                     'coverImage' => $e->cover_image,
                 ])
             ),
+            'seriesContext' => $this->when(
+                $this->relationLoaded('series') && $this->series->isNotEmpty(),
+                function () {
+                    $serie = $this->series->first();
+                    $position = $serie->pivot->position;
+                    $siblings = $serie->stories()
+                        ->published()
+                        ->orderByPivot('position')
+                        ->get(['stories.id', 'stories.slug', 'stories.title']);
+                    $idx = $siblings->search(fn ($s) => $s->id === $this->id);
+                    return [
+                        'id'       => $serie->id,
+                        'title'    => $serie->title,
+                        'slug'     => $serie->slug,
+                        'position' => $position,
+                        'total'    => $siblings->count(),
+                        'prev'     => $idx > 0
+                            ? ['title' => $siblings[$idx - 1]->title, 'slug' => $siblings[$idx - 1]->slug]
+                            : null,
+                        'next'     => $idx !== false && $idx < $siblings->count() - 1
+                            ? ['title' => $siblings[$idx + 1]->title, 'slug' => $siblings[$idx + 1]->slug]
+                            : null,
+                    ];
+                }
+            ),
             'publishedAt' => $this->published_at?->toIso8601String(),
         ];
     }

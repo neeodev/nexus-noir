@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AdminGuard } from "@/components/AdminGuard";
 import { commentsApi, type Comment, type CommentPage } from "@/modules/comments/api";
 import { ApiError } from "@/modules/auth/api";
+import { useDialog } from "@/hooks/useDialog";
 
 type Status = "all" | "hidden" | "pinned" | "deleted";
 
@@ -29,6 +30,7 @@ function ModerationContent() {
   const [data, setData] = useState<CommentPage | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { confirm, dialogNode } = useDialog();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -103,6 +105,7 @@ function ModerationContent() {
         )}
       </div>
 
+      {dialogNode}
       {error && (
         <p className="mb-4 rounded-md border border-red-900/60 bg-red-950/30 px-4 py-3 text-sm text-red-300">
           {error}
@@ -118,7 +121,12 @@ function ModerationContent() {
       ) : (
         <div className="divide-y divide-zinc-900 rounded-lg border border-zinc-900">
           {data?.data.map((comment) => (
-            <CommentRow key={comment.id} comment={comment} onAct={act} />
+            <CommentRow key={comment.id} comment={comment} onAct={act}
+              onDelete={async (id) => {
+                if (await confirm("Supprimer ce commentaire ?", { title: "Supprimer", danger: true, confirmLabel: "Supprimer" }))
+                  act(id, "delete");
+              }}
+            />
           ))}
         </div>
       )}
@@ -152,9 +160,11 @@ function ModerationContent() {
 function CommentRow({
   comment,
   onAct,
+  onDelete,
 }: {
   comment: Comment;
   onAct: (id: number, action: "hide" | "show" | "pin" | "unpin" | "delete") => void;
+  onDelete: (id: number) => void;
 }) {
   return (
     <div className="flex gap-4 p-4 hover:bg-zinc-950/40">
@@ -206,12 +216,7 @@ function CommentRow({
             </>
           )}
           {comment.can.delete && (
-            <ActionBtn
-              onClick={() => {
-                if (confirm("Supprimer ce commentaire ?")) onAct(comment.id, "delete");
-              }}
-              danger
-            >
+            <ActionBtn onClick={() => onDelete(comment.id)} danger>
               Supprimer
             </ActionBtn>
           )}

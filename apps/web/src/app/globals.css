@@ -2,8 +2,8 @@
 
 /* Nexus Noir : sombre par défaut, lecture confortable, mobile first. */
 :root {
-  --background: #08080a;
-  --foreground: #e7e5e4;
+  --background: #050507;
+  --foreground: #D8D2C7;
 }
 
 @theme inline {
@@ -11,6 +11,21 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-syne), system-ui, sans-serif;
+  --font-title: var(--font-bebas), Impact, sans-serif;
+
+  /* Palette Nexus Noir */
+  --color-nn-black:   #050507;
+  --color-nn-surface: #1A1A1D;
+  --color-nn-border:  #2E2E33;
+  --color-nn-text:    #D8D2C7;
+  --color-nn-muted:   #8F8A82;
+  --color-nn-red-dark:#8A1218;
+  --color-nn-red:     #D72638;
+  --color-nn-green:   #7CFF6B;
+  --color-nn-cyan:    #00D4FF;
+  --color-nn-purple:  #8F3FFC;
+  --color-nn-yellow:  #D6A21D;
 }
 
 body {
@@ -24,7 +39,7 @@ body {
    Utilisée sur les pages publiques et dans l'éditeur WYSIWYG.
 ──────────────────────────────────────────────────────── */
 .nn-prose {
-  color: #c4c4cc;
+  color: #D8D2C7;
   font-size: 1.0625rem;
   line-height: 1.85;
 }

@@ -10,6 +10,8 @@ export const TYPE_LABELS: Record<UniverseEntryType, string> = {
   concept: "Concept",
 };
 
+export const TYPES_ORDER: UniverseEntryType[] = ["character", "place", "faction", "event", "concept"];
+
 export const TYPE_LABELS_PLURAL: Record<UniverseEntryType, string> = {
   character: "Personnages",
   place: "Lieux",

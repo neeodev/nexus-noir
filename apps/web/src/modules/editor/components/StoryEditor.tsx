@@ -12,6 +12,7 @@ import { editorExtensions, emptyDoc } from "../extensions";
 import { mediaApi } from "../media";
 import type { StoryDocument } from "@/lib/api";
 import { SpeakerModal } from "./SpeakerModal";
+import { ImportContentModal } from "./ImportContentModal";
 import {
   IconDialogue,
   IconLore,
@@ -73,6 +74,7 @@ function Toolbar({ editor }: { editor: Editor }) {
   });
 
   const [speakerModal, setSpeakerModal] = useState<SpeakerModalState>(null);
+  const [showImport, setShowImport] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -159,6 +161,12 @@ function Toolbar({ editor }: { editor: Editor }) {
           label={<IconImage />}
           onClick={() => fileInput.current?.click()}
         />
+        <Sep />
+        <Btn
+          title="Importer du contenu (JSON / HTML)"
+          label={<span className="text-[10px]">↓ Import</span>}
+          onClick={() => setShowImport(true)}
+        />
         {uploadError && (
           <span className="ml-1 text-xs text-red-400">{uploadError}</span>
         )}
@@ -170,6 +178,10 @@ function Toolbar({ editor }: { editor: Editor }) {
           onChange={handleImageFile}
         />
       </div>
+
+      {showImport && (
+        <ImportContentModal editor={editor} onClose={() => setShowImport(false)} />
+      )}
 
       {speakerModal !== null && (
         <SpeakerModal
