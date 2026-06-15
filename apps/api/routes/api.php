@@ -1,11 +1,16 @@
 <?php
 
 use App\Http\Controllers\Api\V1\Admin\AdminStoryController;
+use App\Http\Controllers\Api\V1\Admin\BadgeController;
 use App\Http\Controllers\Api\V1\Admin\MediaController;
+use App\Http\Controllers\Api\V1\Admin\StatsController;
 use App\Http\Controllers\Api\V1\AuthController;
 use App\Http\Controllers\Api\V1\CommentController;
+use App\Http\Controllers\Api\V1\ProfileController;
 use App\Http\Controllers\Api\V1\ReactionController;
+use App\Http\Controllers\Api\V1\RedeemBadgeController;
 use App\Http\Controllers\Api\V1\StoryController;
+use App\Http\Controllers\Api\V1\StoryViewController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function () {
@@ -16,11 +21,22 @@ Route::prefix('v1')->group(function () {
     Route::middleware('auth:sanctum')->group(function () {
         Route::post('/auth/logout', [AuthController::class, 'logout']);
         Route::get('/auth/user', [AuthController::class, 'user']);
+        Route::patch('/auth/profile', [ProfileController::class, 'update']);
+        Route::patch('/auth/password', [ProfileController::class, 'updatePassword']);
+        Route::get('/auth/readings', [ProfileController::class, 'readings']);
+        Route::get('/auth/badges', function (\Illuminate\Http\Request $req) {
+            $user = $req->user()->load('badges');
+            return \App\Http\Resources\V1\BadgeResource::collection($user->badges);
+        });
+        Route::post('/auth/badges/redeem', RedeemBadgeController::class);
     });
 
     // Stories (Archives) — lecture publique
     Route::get('/stories', [StoryController::class, 'index']);
     Route::get('/stories/{slug}', [StoryController::class, 'show']);
+
+    // Vues (Statistiques) — enregistrement public, déduplication par hash IP+date
+    Route::post('/stories/{slug}/view', [StoryViewController::class, 'store']);
 
     // Réactions (Impacts) — compteurs publics, réaction réservée aux connectés
     Route::get('/stories/{slug}/reactions', [ReactionController::class, 'index']);
@@ -53,6 +69,15 @@ Route::prefix('v1')->group(function () {
         Route::get('/stories/{story:id}/versions', [AdminStoryController::class, 'versions'])->middleware('can:stories.view');
         Route::get('/stories/{story:id}/versions/{version}', [AdminStoryController::class, 'showVersion'])->middleware('can:stories.view');
         Route::post('/stories/{story:id}/versions/{version}/restore', [AdminStoryController::class, 'restore'])->middleware('can:stories.update');
+
+        // Statistiques globales.
+        Route::get('/stats', [StatsController::class, 'index']);
+
+        // Marques — gestion des badges.
+        Route::get('/badges', [BadgeController::class, 'index']);
+        Route::post('/badges', [BadgeController::class, 'store']);
+        Route::patch('/badges/{badge}', [BadgeController::class, 'update']);
+        Route::delete('/badges/{badge}', [BadgeController::class, 'destroy']);
 
         // Preuves — upload d'images.
         Route::post('/media', [MediaController::class, 'store'])->middleware('can:stories.create');

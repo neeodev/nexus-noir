@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api\V1;
 use App\Enums\ReactionType;
 use App\Http\Controllers\Controller;
 use App\Models\Story;
+use App\Support\BadgeAwarder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rules\Enum;
@@ -42,6 +43,7 @@ class ReactionController extends Controller
                 ['user_id' => $user->id],
                 ['type' => $type],
             );
+            BadgeAwarder::onReaction($user);
         }
 
         return response()->json($this->summary($story->refresh(), $request));

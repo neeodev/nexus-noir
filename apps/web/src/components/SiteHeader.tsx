@@ -39,9 +39,9 @@ export function SiteHeader() {
                   Bureau Noir
                 </Link>
               )}
-              <span className="text-zinc-400" title={user.roleLabel}>
+              <Link href="/compte" className="text-zinc-400 hover:text-red-500" title={user.roleLabel}>
                 {user.name}
-              </span>
+              </Link>
               <button
                 onClick={handleLogout}
                 className="text-zinc-500 hover:text-red-500"

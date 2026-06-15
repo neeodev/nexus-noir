@@ -26,6 +26,7 @@ class UserResource extends JsonResource
             ),
             'emailVerifiedAt' => $this->email_verified_at?->toIso8601String(),
             'createdAt' => $this->created_at?->toIso8601String(),
+            'badges' => BadgeResource::collection($this->whenLoaded('badges')),
         ];
     }
 }

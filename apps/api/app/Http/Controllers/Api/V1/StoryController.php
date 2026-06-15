@@ -16,6 +16,7 @@ class StoryController extends Controller
     {
         $stories = Story::query()
             ->published()
+            ->withCount('views')
             ->latest('published_at')
             ->paginate(perPage: 12);
 
@@ -28,6 +29,7 @@ class StoryController extends Controller
         $story = Story::query()
             ->published()
             ->with('author')
+            ->withCount('views')
             ->where('slug', $slug)
             ->firstOrFail();
 

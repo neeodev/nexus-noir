@@ -50,6 +50,8 @@ class CommentController extends Controller
             'body' => (string) $request->string('body'),
         ]);
 
+        \App\Support\BadgeAwarder::onComment($request->user());
+
         return (new CommentResource($comment->load('user')))
             ->response()
             ->setStatusCode(Response::HTTP_CREATED);

@@ -9,6 +9,23 @@ import { apiGet, apiSend, ApiError } from "@/lib/http";
 
 export { ApiError };
 
+export type Badge = {
+  id: number;
+  slug: string;
+  name: string;
+  description: string;
+  icon: string;
+  rarity: string;
+  rarityLabel: string;
+  rarityColor: string;
+  conditionType: string;
+  conditionValue: number | null;
+  conditionMeta: Record<string, unknown> | null;
+  isActive: boolean;
+  sortOrder: number;
+  awardedAt?: string | null;
+};
+
 export type AuthUser = {
   id: number;
   name: string;
@@ -54,5 +71,37 @@ export const authApi = {
       }
       throw error;
     }
+  },
+
+  async updateProfile(payload: { name: string; email: string }): Promise<AuthUser> {
+    const res = await apiSend<Wrapped<AuthUser>>("/auth/profile", "PATCH", payload);
+    return res.data;
+  },
+
+  async updatePassword(payload: {
+    current_password: string;
+    password: string;
+    password_confirmation: string;
+  }): Promise<void> {
+    await apiSend<unknown>("/auth/password", "PATCH", payload);
+  },
+
+  async readings(): Promise<import("@/lib/api").StoryListItem[]> {
+    const res = await apiGet<{ data: import("@/lib/api").StoryListItem[] }>("/auth/readings");
+    return res.data;
+  },
+
+  async myBadges(): Promise<Badge[]> {
+    const res = await apiGet<{ data: Badge[] }>("/auth/badges");
+    return res.data;
+  },
+
+  async redeemCode(code: string): Promise<{ awarded: Badge[]; count: number }> {
+    const res = await apiSend<{ awarded: Badge[]; count: number }>(
+      "/auth/badges/redeem",
+      "POST",
+      { code }
+    );
+    return res;
   },
 };

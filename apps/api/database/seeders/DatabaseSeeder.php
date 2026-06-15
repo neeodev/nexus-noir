@@ -16,18 +16,19 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        User::factory()->create([
+        User::firstOrCreate(['email' => 'admin@example.com'], [
             'name' => 'Super Admin',
-            'email' => 'admin@example.com',
             'role' => UserRole::SuperAdmin,
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
         ]);
 
-        User::factory()->create([
+        User::firstOrCreate(['email' => 'test@example.com'], [
             'name' => 'Test User',
-            'email' => 'test@example.com',
             'role' => UserRole::Reader,
+            'password' => \Illuminate\Support\Facades\Hash::make('password'),
         ]);
 
         $this->call(StorySeeder::class);
+        $this->call(BadgeSeeder::class);
     }
 }

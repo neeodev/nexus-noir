@@ -61,6 +61,12 @@ function StoryCard({ story }: { story: StoryListItem }) {
         )}
         <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-600">
           <span>{story.readingTime} min</span>
+          {story.viewsCount > 0 && (
+            <>
+              <span className="text-zinc-800">·</span>
+              <span>{story.viewsCount} vue{story.viewsCount > 1 ? "s" : ""}</span>
+            </>
+          )}
           {story.tags.length > 0 && (
             <span className="text-zinc-800">·</span>
           )}

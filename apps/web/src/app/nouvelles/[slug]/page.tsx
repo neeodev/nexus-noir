@@ -5,6 +5,7 @@ import { fetchStory } from "@/lib/api";
 import { StoryContent } from "@/modules/editor/render";
 import { ReactionBar } from "@/modules/reactions/components/ReactionBar";
 import { CommentSection } from "@/modules/comments/components/CommentSection";
+import { StoryViewTracker } from "@/components/StoryViewTracker";
 
 type Params = { slug: string };
 
@@ -84,10 +85,15 @@ export default async function StoryPage({
         )}
         <span>{story.readingTime} min de lecture</span>
         <span>{story.wordCount} mots</span>
+        {story.viewsCount > 0 && (
+          <span>{story.viewsCount} vue{story.viewsCount > 1 ? "s" : ""}</span>
+        )}
         {story.tags.map((tag) => (
           <span key={tag}>#{tag}</span>
         ))}
       </div>
+
+      <StoryViewTracker slug={story.slug} />
 
       {/* Corps du texte */}
       <StoryContent doc={story.content} />

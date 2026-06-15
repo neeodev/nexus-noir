@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use App\Http\Requests\Auth\RegisterRequest;
 use App\Http\Resources\V1\UserResource;
 use App\Models\User;
+use App\Support\BadgeAwarder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -26,6 +27,7 @@ class AuthController extends Controller
 
         Auth::login($user);
         $request->session()->regenerate();
+        BadgeAwarder::onRegister($user);
 
         return new UserResource($user);
     }

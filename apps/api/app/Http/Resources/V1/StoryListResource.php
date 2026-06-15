@@ -22,6 +22,7 @@ class StoryListResource extends JsonResource
             'wordCount' => $this->word_count,
             'tags' => $this->tags ?? [],
             'contentWarnings' => $this->content_warnings ?? [],
+            'viewsCount' => $this->views_count ?? 0,
             'publishedAt' => $this->published_at?->toIso8601String(),
         ];
     }

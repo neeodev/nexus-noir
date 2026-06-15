@@ -7,6 +7,20 @@
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000/api/v1";
 
+// Racine du serveur Laravel (sans /api/v1) pour le cookie CSRF de Sanctum.
+const API_HOST = API_URL.replace(/\/api\/v1\/?$/, "");
+
+function getXsrfToken(): string {
+  if (typeof document === "undefined") return "";
+  const m = document.cookie.match(/(?:^|;\s*)XSRF-TOKEN=([^;]+)/);
+  return m ? decodeURIComponent(m[1]) : "";
+}
+
+async function ensureCsrf(): Promise<void> {
+  if (getXsrfToken()) return;
+  await fetch(`${API_HOST}/sanctum/csrf-cookie`, { credentials: "include" });
+}
+
 /** Document Tiptap (ProseMirror) : { type: "doc", content: [...] }. */
 export type StoryDocument = { type: string; content?: unknown[] };
 
@@ -21,6 +35,7 @@ export type StoryListItem = {
   wordCount: number;
   tags: string[];
   contentWarnings: string[];
+  viewsCount: number;
   publishedAt: string | null;
 };
 
@@ -58,4 +73,33 @@ export async function fetchStory(slug: string): Promise<Story | null> {
   } catch {
     return null;
   }
+}
+
+export async function trackView(slug: string): Promise<number> {
+  await ensureCsrf();
+  const res = await fetch(`${API_URL}/stories/${encodeURIComponent(slug)}/view`, {
+    method: "POST",
+    headers: { Accept: "application/json", "X-XSRF-TOKEN": getXsrfToken() },
+    credentials: "include",
+  });
+  if (!res.ok) return 0;
+  const json = (await res.json()) as { views: number };
+  return json.views;
+}
+
+export type AdminStats = {
+  viewsToday: number;
+  viewsWeek: number;
+  topStories: { slug: string; title: string; viewsCount: number }[];
+};
+
+export async function fetchAdminStats(): Promise<AdminStats> {
+  await ensureCsrf();
+  const res = await fetch(`${API_URL}/admin/stats`, {
+    headers: { Accept: "application/json", "X-XSRF-TOKEN": getXsrfToken() },
+    credentials: "include",
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Admin stats -> ${res.status}`);
+  return res.json() as Promise<AdminStats>;
 }
