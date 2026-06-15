@@ -1,0 +1,87 @@
+# Docker Compose pour ZimaOS
+# Images auto-buildées par GitHub Actions → GHCR
+# Watchtower surveille les nouvelles images et redémarre automatiquement
+#
+# Remplace TON_GITHUB_USERNAME par ton username GitHub (en minuscules)
+# Importe ce fichier dans ZimaOS → Apps → Install a customized app
+
+services:
+
+  postgres:
+    image: postgres:17-alpine
+    container_name: nexus_noir_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: nexus_noir
+      POSTGRES_USER: nexus_noir
+      POSTGRES_PASSWORD: CHANGE_MOI
+    volumes:
+      - /DATA/AppData/nexus-noir/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nexus_noir"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: nexus_noir_redis
+    restart: unless-stopped
+    volumes:
+      - /DATA/AppData/nexus-noir/redis:/data
+
+  api:
+    image: ghcr.io/TON_GITHUB_USERNAME/nexus-noir-api:latest
+    container_name: nexus_noir_api
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    environment:
+      APP_NAME: "Nexus Noir"
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: COLLE_TA_CLE_ICI
+      APP_URL: https://api.ton-domaine.com
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_DATABASE: nexus_noir
+      DB_USERNAME: nexus_noir
+      DB_PASSWORD: CHANGE_MOI
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      SESSION_DRIVER: redis
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      SANCTUM_STATEFUL_DOMAINS: ton-domaine.com,www.ton-domaine.com
+      SESSION_DOMAIN: .ton-domaine.com
+    volumes:
+      - /DATA/AppData/nexus-noir/storage:/var/www/html/storage/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    image: ghcr.io/TON_GITHUB_USERNAME/nexus-noir-web:latest
+    container_name: nexus_noir_web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
+  # Watchtower — surveille GHCR et redémarre les containers quand une nouvelle image est dispo
+  # Vérifie toutes les 5 minutes
+  watchtower:
+    image: containrrr/watchtower
+    container_name: nexus_noir_watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      WATCHTOWER_POLL_INTERVAL: 300
+      WATCHTOWER_CLEANUP: "true"
+      # Si ton repo GitHub est privé, il faut s'authentifier à GHCR :
+      # REPO_USER: TON_GITHUB_USERNAME
+      # REPO_PASS: TON_GITHUB_TOKEN  (Personal Access Token avec read:packages)
+    command: nexus_noir_api nexus_noir_web
