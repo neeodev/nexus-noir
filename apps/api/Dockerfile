@@ -13,7 +13,7 @@ RUN composer install \
 # ── Étape 2 : image de production ────────────────────────────────────────────
 FROM php:8.3-fpm-alpine AS production
 
-# Dépendances système
+# Dépendances système + outils de compilation PECL (supprimés après)
 RUN apk add --no-cache \
     nginx \
     supervisor \
@@ -21,14 +21,17 @@ RUN apk add --no-cache \
     libpng-dev \
     libjpeg-turbo-dev \
     libwebp-dev \
+    freetype-dev \
     oniguruma-dev \
     icu-dev \
+    icu-libs \
     zip \
     unzip \
-    curl
+    curl \
+ && apk add --no-cache --virtual .build-deps $PHPIZE_DEPS
 
 # Extensions PHP
-RUN docker-php-ext-configure gd --with-jpeg --with-webp \
+RUN docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype \
  && docker-php-ext-install -j"$(nproc)" \
     pdo \
     pdo_pgsql \
@@ -39,7 +42,8 @@ RUN docker-php-ext-configure gd --with-jpeg --with-webp \
     intl \
     mbstring \
  && pecl install redis \
- && docker-php-ext-enable redis
+ && docker-php-ext-enable redis \
+ && apk del .build-deps
 
 # Opcache
 RUN { \

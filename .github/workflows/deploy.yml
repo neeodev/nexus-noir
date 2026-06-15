@@ -50,6 +50,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Le lockfile est à la racine du monorepo, pas dans apps/web/
+      # Le contexte Docker ne le verrait pas sans cette copie
+      - name: Copier le lockfile dans le contexte web
+        run: cp pnpm-lock.yaml apps/web/pnpm-lock.yaml
+
       - name: Login GHCR
         uses: docker/login-action@v3
         with:
